@@ -1,4 +1,4 @@
-node-web-scraper
+Interactive Cricket Visualization
 ================
 
-Simple web scraper to get a movie name, release year and community rating from IMDB.
+Scraping www.cricinfo.com to generate an interactive visualization. Rather than scraping statistics, the approach is to scrape the commentary, giving us insight into in-game events.
