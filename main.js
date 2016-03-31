@@ -21,7 +21,7 @@ window.onload = function() {
       .style("left", margin.left + "px")
       .style("top", margin.top + "px");
 
-    var tooltip = d3.select("body").append("rect")
+    var tooltip = d3.select("body").append("div")
                     .attr("class", "tooltip")
                     .style("opacity", 0);
 
@@ -38,7 +38,7 @@ window.onload = function() {
         .style("background-color", function(d){ return d.color1; })
         .on("mouseover", function(d) {
             tooltip.style("opacity", .9);
-            tooltip.html("<span style='font-size: 110%;'>" + d["team"] + "</span><br>" + "Points: " + d["points"])
+            tooltip.html("<span style='font-size: 110%;'>" + d["team"] + "</span><br>" + "Rank: " + d["rank"])
                  .style("left", d3.event.pageX + 5 + "px")
                  .style("top", d3.event.pageY + 5 + "px");
             d3.selectAll(".node").transition().duration(300)
