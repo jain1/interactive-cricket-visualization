@@ -1,0 +1,19 @@
+{
+ "name": "flare",
+ "children": [
+  {
+     "name": "cluster",
+     "children": [
+      {"team": "Chennai Super Kings", "points": 23, "color1": "yellow", "color2": "blue", "logo": "csk.png"},
+    {"team": "Deccan Chargers", "points": 6, "color1": "silver", "color2": "blue", "logo": "dc.png" },
+    {"team": "Delhi Daredevils", "points": 18, "color1": "navy", "color2": "red", "logo": "dd.png"},
+    {"team": "Kings XI Punjab", "points": 23, "color1": "red", "color2": "silver", "logo": "kxip.png"},
+    {"team": "Kolkata Knight Riders", "points": 15, "color1": "purple", "color2": "gold", "logo": "kkr.png"},
+    {"team": "Mumbai Indians", "points": 16, "color1": "blue", "color2": "silver", "logo": "mi.png"},
+    {"team": "Rajasthan Royals", "points": 32, "color1": "royalblue", "color2": "gold", "logo": "rr.png"},
+    {"team": "Royal Challengers Bangalore", "points": 10, "color1": "gold", "color2": "red", "logo": "rcb.png"}
+    
+   ]
+  }
+ ]
+}

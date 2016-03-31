@@ -1,0 +1,35 @@
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: auto;
+  position: relative;
+  width: 100%;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.figure {
+  display: inline-block;
+}
+
+.node {
+  border: solid 1px white;
+  font: 10px sans-serif;
+  line-height: 12px;
+  overflow: hidden;
+  position: absolute;
+  text-indent: 2px;
+  cursor: pointer;
+}
+
+.tooltip {
+  /*background: #fff;*/
+  background: #202020;
+  /*color: #202020;*/
+  color: #fff;
+  border-radius: 0px 5px 5px 5px;
+  position: absolute;
+  padding: 10px;
+  pointer-events: none;
+  text-align: left;
+  opacity: .9;
+}
