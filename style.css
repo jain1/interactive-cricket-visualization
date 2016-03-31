@@ -12,7 +12,7 @@ body {
 }
 
 .node {
-  border: solid 1px white;
+  /*border: solid 1px white;*/
   font: 10px sans-serif;
   line-height: 12px;
   overflow: hidden;
@@ -22,9 +22,7 @@ body {
 }
 
 .tooltip {
-  /*background: #fff;*/
   background: #202020;
-  /*color: #202020;*/
   color: #fff;
   border-radius: 0px 5px 5px 5px;
   position: absolute;
@@ -32,4 +30,14 @@ body {
   pointer-events: none;
   text-align: left;
   opacity: .9;
+  -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+  z-index: 5;
+}
+
+.slider {
+  display: inline-block; 
+  margin: 0;
+  width: 60%;
 }

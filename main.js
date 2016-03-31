@@ -5,7 +5,7 @@ window.onload = function() {
     var w = window.innerWidth;
     var h = window.innerHeight;
 
-    var margin = {top: 40, right: 10, bottom: 10, left: 10},
+    var margin = {top: 20, right: 10, bottom: 10, left: 10},
       width = (w * .9),
       height = (h * .9);
 
@@ -41,18 +41,48 @@ window.onload = function() {
             tooltip.html("<span style='font-size: 110%;'>" + d["team"] + "</span><br>" + "Points: " + d["points"])
                  .style("left", d3.event.pageX + 5 + "px")
                  .style("top", d3.event.pageY + 5 + "px");
+            d3.selectAll(".node").transition().duration(300)
+              .style("border", function(e) {
+                if (d["team"] == e["team"]) {
+                  return "1px solid " + e.color1 + "";
+                }
+                return "none";
+              })
+              .style("z-index", function(e) {
+                if (d["team"] == e["team"]) {
+                  return 3;
+                }
+                return 0;
+              });
         })
         .on("mouseout", function(d) {
           tooltip.style("opacity", 0);
+          d3.selectAll(".node").transition().duration(300)
+            .style("border", "none")
+            .style("z-index", "initial");
         });
 
+    });
+    
+    d3.select("#nMatch").on("input", function() {
+      updateSliderLabel(+this.value);
     });
 
     function position() {
     this.style("left", function(d) { return d.x + "px"; })
         .style("top", function(d) { return d.y + "px"; })
-        .style("width", function(d) { return Math.max(0, d.dx - 1) + "px"; })
-        .style("height", function(d) { return Math.max(0, d.dy - 1) + "px"; });
+        //.style("width", function(d) { return Math.max(0, d.dx - 1) + "px"; })
+        //.style("height", function(d) { return Math.max(0, d.dy - 1) + "px"; });
+        .style("width", function(d) { return Math.max(0, d.dx) + "px"; })
+        .style("height", function(d) { return Math.max(0, d.dy) + "px"; });
     }
 
+}
+
+
+
+function updateSliderLabel(nMatch) {
+  // adjust the text on the range slider
+  d3.select("#nMatch-value").text(nMatch);
+  d3.select("#nMatch").property("value", nMatch); 
 }
