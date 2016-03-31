@@ -12,26 +12,29 @@ var startingMatch = 335981;
 
 //constructors
 function match(){
-    //match result (winnings team
-    //innings1
-    //innings2
+    this.result = null;
+    this.firstInnings = new innings();
+    this.secondInnings = new innings();
 }
 
 function innings(){
     this.batsmen = [];
     this.bowlers = [];
     this.commentary = [];
+    //bowling team
+    //batting team
 }
 
-function team(name){
-    this.name = name;
-    this.squad = [];
+function ball(over, ball, run, batsman, bowler){
+    this.over = over;
+    this.ball = ball;
+    this.run = run;
+    this.batsman = batsman;
+    this.bowler = bowler;
 }
 
 //our JavaScript objects
-var firstInnings = new innings();
-var secondInnings = new innings();
-var teams = [];
+var match = new match();
 
 app.get('/scrape', function(req, res){
     //*************************************************************************
@@ -155,15 +158,6 @@ app.get('/scrape', function(req, res){
 
 
 
-
-
-
-
-
-
-
-
-
     //Let's scrape match data!!
     var url = 'http://www.espncricinfo.com/ipl/engine/match/' + (startingMatch + matchNumber) + '.html';
     console.log(url);
@@ -228,16 +222,17 @@ app.get('/scrape', function(req, res){
         $('ul.tabs-block').filter(function(){
             var d = $(this).children().text();
             d = d.trim();
-
             d = d.replace(/ innings/g, '*');
-
             var tokens = d.split('*');
 
-            firstInnings.battingTeam = tokens[0].trim();
-            secondInnings.battingTeam = tokens[1].trim();
+            match.firstInnings.battingTeam = tokens[0].trim();
+            match.firstInnings.bowlingTeam = tokens[1].trim();
+
+            match.secondInnings.battingTeam = tokens[1].trim();
+            match.secondInnings.bowlingTeam = tokens[0].trim();
 
             //print statements
-            console.log(firstInnings.battingTeam + ', ' + secondInnings.battingTeam);
+            console.log(match.firstInnings.battingTeam + ', ' + match.secondInnings.battingTeam);
 
 
         })
@@ -249,9 +244,9 @@ app.get('/scrape', function(req, res){
     //*************************************************************************
     //This part deals with collecting the commentary data
     //*************************************************************************
-
+    //first innings
     request(url, function(error, response, html){
-        console.log("Starting scraping: **************************************");
+        console.log("Starting scraping first innings: **************************************");
         $ = cheerio.load(html);
 
         $('div.commentary-event').filter(function(){
@@ -266,19 +261,82 @@ app.get('/scrape', function(req, res){
             for (var i = 0; i < d.length; i++) d[i] = d[i].replace(/(?:\r\n|\r|\n)/g, '');
 
             //getting rid of extra space:
-            d[0] = d[0].trim();
+            if (d.length > 1){
+                d[0] = d[0].trim();
+                var overInfo = d[0].split('.');
+                var ballInfo = d[1].split(',');
+                var playerInfo = ballInfo[0].split(' ');
+                var run;
+                //console.log(ballInfo[1]);
+                if (ballInfo[1].indexOf('no') >= 0) run = 0;
+                else if (ballInfo[1].indexOf('OUT') >= 0) run = 'W';
+                else if (ballInfo[1].indexOf('FOUR') >= 0) run = 4;
+                else if (ballInfo[1].indexOf('SIX') >= 0) run = 6;
+                else run = ballInfo[1].charAt(0);
 
+                var newBall = new ball(overInfo[0], overInfo[1], run, playerInfo[2], playerInfo[1]);
+                match.firstInnings.commentary.push(newBall)
 
-            //print statements
-            console.log("Element Begin: **************************************");
-            console.log(d);
-            console.log("Element End: **************************************");
-
-
+                //print statements
+                console.log("Element Begin: **************************************");
+                console.log(d);
+                console.log("the ball object: ");
+                console.log(newBall);
+                console.log("Element End: **************************************");
+            }
         })
 
-        console.log("Finished scraping: **************************************");
+        console.log("Finished scraping first innings: **************************************");
     })
+    //secondInnings
+    url = url.replace('innings=1', 'innings=2');
+    request(url, function(error, response, html){
+        console.log("Starting scraping second innings: **************************************");
+        $ = cheerio.load(html);
+
+        $('div.commentary-event').filter(function(){
+            var d = $(this).text().split("\t");
+            var l = d.length;
+            //remove the 0th, 2nd, 3rd, n-2th, n-1th, nth items
+            d.splice(l-3,3);
+            d.splice(0,1);
+            d.splice(1,2);
+
+            //getting rid of line breaks
+            for (var i = 0; i < d.length; i++) d[i] = d[i].replace(/(?:\r\n|\r|\n)/g, '');
+
+            //getting rid of extra space:
+            if (d.length > 1){
+                d[0] = d[0].trim();
+                var overInfo = d[0].split('.');
+                var ballInfo = d[1].split(',');
+                var playerInfo = ballInfo[0].split(' ');
+                var run;
+                //console.log(ballInfo[1]);
+                if (ballInfo[1].indexOf('no') >= 0) run = 0;
+                else if (ballInfo[1].indexOf('OUT') >= 0) run = 'W';
+                else if (ballInfo[1].indexOf('FOUR') >= 0) run = 4;
+                else if (ballInfo[1].indexOf('SIX') >= 0) run = 6;
+                else run = ballInfo[1].charAt(0);
+
+                var newBall = new ball(overInfo[0], overInfo[1], run, playerInfo[2], playerInfo[1]);
+                match.secondInnings.commentary.push(newBall)
+
+                //print statements
+                console.log("Element Begin: **************************************");
+                console.log(d);
+                console.log("the ball object: ");
+                console.log(newBall);
+                console.log("Element End: **************************************");
+            }
+        })
+
+        console.log("Finished scraping second innings: **************************************");
+    })
+
+    setTimeout(function(){
+        console.log(JSON.stringify(match));
+    }, 8000)
 })
 
 app.listen('8081')
