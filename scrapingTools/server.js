@@ -4,15 +4,25 @@ var request = require('request');
 var cheerio = require('cheerio');
 var app     = express();
 
+//loading JSON files
+var teams = require('./teams.json');
 
-//variables
-var matchNumber = 1;
-var startingMatch = 335981;
+
+//variables. Change match number here!
+var matchNumber = 0;
+var startingMatch = 335982;
 
 
 //constructors
-function match(){
-    this.result = null;
+function season(seasonNumber){
+    this.seasonNumber = seasonNumber;
+    this.matches = [];
+}
+
+
+function match(matchNumber){
+    this.matchNumber = matchNumber
+    this.winner = null;
     this.firstInnings = new innings();
     this.secondInnings = new innings();
 }
@@ -21,8 +31,8 @@ function innings(){
     this.batsmen = [];
     this.bowlers = [];
     this.commentary = [];
-    //bowling team
-    //batting team
+    this.battingTeam = null;
+    this.bowlingTeam = null;
 }
 
 function ball(over, ball, run, batsman, bowler){
@@ -33,8 +43,22 @@ function ball(over, ball, run, batsman, bowler){
     this.bowler = bowler;
 }
 
+function teamIndex(team){
+    if (team === 'Mumbai Indians') return 0;
+    else if (team === 'Kings XI Punjab') return 1;
+    else if (team === 'Rajasthan Royals') return 2;
+    else if (team === 'Chennai Super Kings') return 3;
+    else if (team === 'Royal Challengers Bangalore') return 4;
+    else if (team === 'Deccan Chargers') return 5;
+    else if (team === 'Kolkata Knight Riders') return 6;
+    else if (team === 'Delhi Daredevils') return 7;
+    else return -1;
+}
+
 //our JavaScript objects
-var match = new match();
+var season = new season(1);
+var match = new match(matchNumber + 1);
+
 
 app.get('/scrape', function(req, res){
     //*************************************************************************
@@ -160,63 +184,12 @@ app.get('/scrape', function(req, res){
 
     //Let's scrape match data!!
     var url = 'http://www.espncricinfo.com/ipl/engine/match/' + (startingMatch + matchNumber) + '.html';
-    console.log(url);
 
     //*************************************************************************
-    //This part collects all the batsmen's name
-    //*************************************************************************
-    request(url, function(error, response, html){
-        console.log("Starting scraping batsman: **************************************");
-        $ = cheerio.load(html);
-        //try using .each instead of .filter
-        $('td.batsman-name').filter(function(){
-            var d = $(this).text();
-            d = d.replace('*','');
-
-
-            //print statements
-            console.log(d);
-
-
-        })
-
-        console.log("Finished scraping batsman: **************************************");
-
-    })
-    //*************************************************************************
-    //This part collects all the bowler's name
-    //*************************************************************************
-    request(url, function(error, response, html){
-        console.log("Starting scraping bowler: **************************************");
-        $ = cheerio.load(html);
-
-        $('td.bowler-name').filter(function(){
-            var d = $(this).text();
-            d = d.replace('*','');
-
-
-            //print statements
-            console.log(d);
-
-
-        })
-
-        console.log("Finished scraping bowler: **************************************");
-
-    })
-
-
-
-
-
-    //*************************************************************************
-    //Changing the URL to access the commentary/getting batting/bowling teams
+    //Collecting Data about the matches
     //*************************************************************************
     url = url.concat('?innings=1;view=commentary');
-    console.log("commentary url: " + url);
-    //getting the team names and which batted first
     request(url, function(error, response, html){
-        console.log("Starting scraping commentary: **************************************");
         $ = cheerio.load(html);
 
         $('ul.tabs-block').filter(function(){
@@ -230,24 +203,50 @@ app.get('/scrape', function(req, res){
 
             match.secondInnings.battingTeam = tokens[1].trim();
             match.secondInnings.bowlingTeam = tokens[0].trim();
-
-            //print statements
-            console.log(match.firstInnings.battingTeam + ', ' + match.secondInnings.battingTeam);
-
-
         })
 
-        console.log("Finished scraping commentary: **************************************");
+        $('div.innings-requirement').filter(function(){
+            var d = $(this).text();
+            d = d.split(' won')
+            d = d[0].trim();
 
-    })
+            match.winner = d;
+        })
 
-    //*************************************************************************
-    //This part deals with collecting the commentary data
-    //*************************************************************************
-    //first innings
-    request(url, function(error, response, html){
-        console.log("Starting scraping first innings: **************************************");
-        $ = cheerio.load(html);
+        $('li.commsMenuNonSelected').filter(function() {
+            var d = $(this).children().text().trim();
+
+            if (d !== "Fours" && d !== "Sixes" && d !== "Wickets"){
+                if (d.indexOf('/') > 0){
+                    //means its a bowler
+                    var tokens = d.split(' ');
+                    d = tokens[0].charAt(0) + tokens[1];
+                    var squad = teams[teamIndex(match.firstInnings.bowlingTeam)].squad;
+                    for (var i = 0; i < squad.length; i ++){
+                        var curr = squad[i].split(' ');
+                        curr = curr[0].charAt(0) + curr[1];
+                        if (curr === d){
+                            match.firstInnings.bowlers.push(squad[i]);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    var tokens = d.split(' ');
+                    d = tokens[0].charAt(0) + tokens[1];
+                    var squad = teams[teamIndex(match.firstInnings.battingTeam)].squad;
+                    for (var i = 0; i < squad.length; i ++){
+                        var curr = squad[i].split(' ');
+                        curr = curr[0].charAt(0) + curr[1];
+                        if (curr === d){
+                            match.firstInnings.batsmen.push(squad[i]);
+                            break;
+                        }
+                    }
+                }
+            }
+
+        })
 
         $('div.commentary-event').filter(function(){
             var d = $(this).text().split("\t");
@@ -267,32 +266,73 @@ app.get('/scrape', function(req, res){
                 var ballInfo = d[1].split(',');
                 var playerInfo = ballInfo[0].split(' ');
                 var run;
-                //console.log(ballInfo[1]);
+
                 if (ballInfo[1].indexOf('no') >= 0) run = 0;
                 else if (ballInfo[1].indexOf('OUT') >= 0) run = 'W';
                 else if (ballInfo[1].indexOf('FOUR') >= 0) run = 4;
                 else if (ballInfo[1].indexOf('SIX') >= 0) run = 6;
-                else run = ballInfo[1].charAt(0);
+                else run = Number(ballInfo[1].charAt(0));
 
-                var newBall = new ball(overInfo[0], overInfo[1], run, playerInfo[2], playerInfo[1]);
-                match.firstInnings.commentary.push(newBall)
+                var bat;
+                var bowl;
 
-                //print statements
-                console.log("Element Begin: **************************************");
-                console.log(d);
-                console.log("the ball object: ");
-                console.log(newBall);
-                console.log("Element End: **************************************");
+                for (var i = 0; i < match.firstInnings.batsmen.length; i++){
+                    if (match.firstInnings.batsmen[i].indexOf(playerInfo[2]) >= 0){
+                        bat = match.firstInnings.batsmen[i];
+                        break;
+                    }
+                }
+
+                for (var j = 0; j < match.firstInnings.bowlers.length; j++){
+                    if (match.firstInnings.bowlers[j].indexOf(playerInfo[0]) >= 0){
+                        bowl = match.firstInnings.bowlers[j];
+                        break;
+                    }
+                }
+
+                var newBall = new ball(overInfo[0], overInfo[1], run, bat, bowl);
+                match.firstInnings.commentary.push(newBall);
             }
         })
-
-        console.log("Finished scraping first innings: **************************************");
     })
+
     //secondInnings
     url = url.replace('innings=1', 'innings=2');
     request(url, function(error, response, html){
-        console.log("Starting scraping second innings: **************************************");
         $ = cheerio.load(html);
+        $('li.commsMenuNonSelected').filter(function() {
+            var d = $(this).children().text().trim();
+            if (d !== "Fours" && d !== "Sixes" && d !== "Wickets"){
+                if (d.indexOf('/') > 0){
+                    //means its a bowler
+                    var tokens = d.split(' ');
+                    d = tokens[0].charAt(0) + tokens[1];
+                    var squad = teams[teamIndex(match.secondInnings.bowlingTeam)].squad;
+                    for (var i = 0; i < squad.length; i ++){
+                        var curr = squad[i].split(' ');
+                        curr = curr[0].charAt(0) + curr[1];
+                        if (curr === d){
+                            match.secondInnings.bowlers.push(squad[i]);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    var tokens = d.split(' ');
+                    d = tokens[0].charAt(0) + tokens[1];
+                    var squad = teams[teamIndex(match.secondInnings.battingTeam)].squad;
+                    for (var i = 0; i < squad.length; i ++){
+                        var curr = squad[i].split(' ');
+                        curr = curr[0].charAt(0) + curr[1];
+                        if (curr === d){
+                            match.secondInnings.batsmen.push(squad[i]);
+                            break;
+                        }
+                    }
+                }
+            }
+
+        })
 
         $('div.commentary-event').filter(function(){
             var d = $(this).text().split("\t");
@@ -312,33 +352,41 @@ app.get('/scrape', function(req, res){
                 var ballInfo = d[1].split(',');
                 var playerInfo = ballInfo[0].split(' ');
                 var run;
-                //console.log(ballInfo[1]);
+
                 if (ballInfo[1].indexOf('no') >= 0) run = 0;
                 else if (ballInfo[1].indexOf('OUT') >= 0) run = 'W';
                 else if (ballInfo[1].indexOf('FOUR') >= 0) run = 4;
                 else if (ballInfo[1].indexOf('SIX') >= 0) run = 6;
-                else run = ballInfo[1].charAt(0);
+                else run = Number(ballInfo[1].charAt(0));
 
-                var newBall = new ball(overInfo[0], overInfo[1], run, playerInfo[2], playerInfo[1]);
+                var bat;
+                var bowl;
+
+                for (var i = 0; i < match.secondInnings.batsmen.length; i++){
+                    if (match.secondInnings.batsmen[i].indexOf(playerInfo[2]) >= 0){
+                        bat = match.secondInnings.batsmen[i];
+                        break;
+                    }
+                }
+
+                for (var j = 0; j < match.secondInnings.bowlers.length; j++){
+                    if (match.secondInnings.bowlers[j].indexOf(playerInfo[0]) >= 0){
+                        bowl = match.secondInnings.bowlers[j];
+                        break;
+                    }
+                }
+
+                var newBall = new ball(overInfo[0], overInfo[1], run, bat, bowl);
                 match.secondInnings.commentary.push(newBall)
-
-                //print statements
-                console.log("Element Begin: **************************************");
-                console.log(d);
-                console.log("the ball object: ");
-                console.log(newBall);
-                console.log("Element End: **************************************");
             }
         })
-
-        console.log("Finished scraping second innings: **************************************");
     })
 
     setTimeout(function(){
-        console.log(JSON.stringify(match));
-    }, 8000)
+        season.matches.push(match);
+        console.log(JSON.stringify(season));
+    }, 5000)
 })
 
 app.listen('8081')
-//console.log('Magic happens on port 8081');
 exports = module.exports = app
