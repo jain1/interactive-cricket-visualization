@@ -16,12 +16,13 @@ function season(seasonNumber){
 
 function team(teamName){
     this.teamName = teamName;
-    this.squad = []
+    this.squad = [];
     this.matches = [];
 }
 
 function match(matchNumber){
-    this.matchNumber = matchNumber
+    this.matchNumber = matchNumber;
+    this.homeGame = null;
     this.winner = null;
     this.firstInnings = new innings();
     this.secondInnings = new innings();
@@ -45,20 +46,17 @@ function ball(over, ball, run, batsman, bowler){
 
 //helper function
 function teamIndex(team){
-    if (team === 'Mumbai Indians') return 0;
-    else if (team === 'Kings XI Punjab') return 1;
-    else if (team === 'Rajasthan Royals') return 2;
-    else if (team === 'Chennai Super Kings') return 3;
-    else if (team === 'Royal Challengers Bangalore') return 4;
-    else if (team === 'Deccan Chargers') return 5;
-    else if (team === 'Kolkata Knight Riders') return 6;
-    else if (team === 'Delhi Daredevils') return 7;
-    else return -1;
+
+    for (var i = 0; i < ipl[currentSeason-1].teams.length; i++){
+        if (ipl[currentSeason-1].teams[i].teamName == team) return i;
+    }
 }
 
 //our JavaScript objects
+var currentSeason = 1;
 var ipl = [];
-ipl.push(new season(1));
+ipl.push(new season(currentSeason));
+ipl.push(new season(currentSeason + 1));
 
 app.get('/scrape', function(req, res){
     //*************************************************************************
@@ -79,10 +77,14 @@ app.get('/scrape', function(req, res){
         //get team name
         request(newURL, function(error, response, html){
             $ = cheerio.load(html);
+
             $('h1').filter(function(){
                 teamName = $(this).text();
-                teamName = teamName.split(" / ")[0].trim()
-                ipl[0].teams[number] = new team(teamName);
+                teamName = teamName.split(" Squad")[0].trim()
+                if (teamName === "Bangalore Royal Challengers"){
+                    teamName = 'Royal Challengers Bangalore'
+                }
+                ipl[currentSeason - 1].teams[number] = new team(teamName);
             })
             callback(number, newURL, startTeamScrape, startMatchScrape)
         })
@@ -96,348 +98,312 @@ app.get('/scrape', function(req, res){
                 var d = String($(this).children().text());
                 d = d.trim();
                 if (d.indexOf('\r') > 0) d = d.slice(0, d.indexOf('\r'));
-                ipl[0].teams[number].squad.push(d);
+                ipl[currentSeason - 1].teams[number].squad.push(d);
             })
-            console.log(ipl[0].teams[number].squad);
+
+            //*****print statement to check current team's season squad
+            //console.log(ipl[currentSeason - 1].teams[number].squad);
+
             number++;
             if (number < 8){
                 callback2(number, teamURL, makeTeam)
             }
             else {
                 console.log("***********finished team squad scraping***********");
-                console.log(ipl[0]);
-                callback3(url, 0)
+                console.log(ipl[currentSeason - 1]);
+                callback3(url, 0, findHomeAwayTeam)
             }
         })
     }
 
-    function startMatchScrape(url, number){
+    function startMatchScrape(url, number, callback){
         var newURL = url + (matchStart + number) + '.html?innings=1;view=commentary';
-        console.log(newURL);
+        request(newURL, function(error, response, html) {
+            $ = cheerio.load(html);
+            $('ul.tabs-block').filter(function () {
+                var d = $(this).children().text();
+                d = d.trim();
+                d = d.replace(/ innings/g, '*');
+                var tokens = d.split('*');
+
+                var team1 = tokens[0].trim();
+                var team2 = tokens[1].trim();
+
+                callback(newURL, number, team1, team2, decideWinner)
+            })
+        })
     }
 
-    //var teamStart = 338082,
-    //    teamNumber = 0;
-    //
-    //var teamURL = 'http://www.espncricinfo.com/ipl/content/squad/'
-    //
-    //teams[0] = new team("Mumbai Indians")
-    //var url0 = teamURL + (teamStart) + '.html';
-    //
-    //teams[1] = new team("Kings XI Punjab")
-    //var url1 = teamURL + (teamStart + 1) + '.html';
-    //
-    //teams[2] = new team("Rajasthan Royals")
-    //var url2 = teamURL + (teamStart + 2) + '.html';
-    //
-    //teams[3] = new team("Chennai Super Kings")
-    //var url3 = teamURL + (teamStart + 3) + '.html';
-    //
-    //teams[4] = new team("Royal Challengers Bangalore")
-    //var url4 = teamURL + (teamStart + 4) + '.html';
-    //
-    //teams[5] = new team("Deccan Chargers")
-    //var url5 = teamURL + (teamStart + 5) + '.html';
-    //
-    //teams[6] = new team("Kolkata Knight Riders")
-    //var url6 = teamURL + (teamStart + 6) + '.html';
-    //
-    //teams[7] = new team("Delhi Daredevils")
-    //var url7 = teamURL + (teamStart + 7) + '.html';
-    //
-    //request(url0, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //    $('h3').filter(function(){
-    //        var d = String($(this).children().text());
-    //        d = d.trim();
-    //        if (d.indexOf('\r') > 0) d = d.slice(0, d.indexOf('\r'));
-    //        teams[0].squad.push(d);
-    //    })
-    //})
-    //
-    //request(url1, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //    $('h3').filter(function(){
-    //        var d = String($(this).children().text());
-    //        d = d.trim();
-    //        if (d.indexOf('\r') > 0) d = d.slice(0, d.indexOf('\r'));
-    //        teams[1].squad.push(d);
-    //    })
-    //})
-    //
-    //request(url2, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //    $('h3').filter(function(){
-    //        var d = String($(this).children().text());
-    //        d = d.trim();
-    //        if (d.indexOf('\r') > 0) d = d.slice(0, d.indexOf('\r'));
-    //        teams[2].squad.push(d);
-    //    })
-    //})
-    //
-    //request(url3, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //    $('h3').filter(function(){
-    //        var d = String($(this).children().text());
-    //        d = d.trim();
-    //        if (d.indexOf('\r') > 0) d = d.slice(0, d.indexOf('\r'));
-    //        teams[3].squad.push(d);
-    //    })
-    //})
-    //
-    //request(url4, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //    $('h3').filter(function(){
-    //        var d = String($(this).children().text());
-    //        d = d.trim();
-    //        if (d.indexOf('\r') > 0) d = d.slice(0, d.indexOf('\r'));
-    //        teams[4].squad.push(d);
-    //    })
-    //})
-    //
-    //request(url5, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //    $('h3').filter(function(){
-    //        var d = String($(this).children().text());
-    //        d = d.trim();
-    //        if (d.indexOf('\r') > 0) d = d.slice(0, d.indexOf('\r'));
-    //        teams[5].squad.push(d);
-    //    })
-    //})
-    //
-    //request(url6, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //    $('h3').filter(function(){
-    //        var d = String($(this).children().text());
-    //        d = d.trim();
-    //        if (d.indexOf('\r') > 0) d = d.slice(0, d.indexOf('\r'));
-    //        teams[6].squad.push(d);
-    //    })
-    //})
-    //
-    //request(url7, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //    $('h3').filter(function(){
-    //        var d = String($(this).children().text());
-    //        d = d.trim();
-    //        if (d.indexOf('\r') > 0) d = d.slice(0, d.indexOf('\r'));
-    //        teams[7].squad.push(d);
-    //    })
-    //})
-    //
-    //setTimeout(function(){
-    //    //console.log("our list of URL's:")
-    //    //console.log(teams);
-    //    //console.log("Finished scraping team: **************************************");
-    //    console.log(JSON.stringify(teams))
-    //}, 5000)
+    function findHomeAwayTeam(newURL, number, team1, team2, callback2){
+        request(newURL, function(error, response, html) {
+            $ = cheerio.load(html);
+            var homeTeam = null;
+            $('div.team-1-name').filter(function () {
+                homeTeam = $(this).children().first().text();
+            })
+
+            var matchForTeam1,
+                matchForTeam2,
+                firstInnings,
+                secondInnings;
+
+            matchForTeam1 = new match(number, true);
+            matchForTeam2 = new match(number, false);
+
+            firstInnings = new innings();
+            secondInnings = new innings();
+
+            firstInnings.battingTeam = team1;
+            firstInnings.bowlingTeam = team2;
+            secondInnings.battingTeam = team2;
+            secondInnings.bowlingTeam = team1;
+
+            if (team1 == homeTeam){
+                matchForTeam1.homeGame = true;
+                matchForTeam2.homeGame = false;
+            }
+            else if (team2 == homeTeam) {
+                matchForTeam1.homeGame = false;
+                matchForTeam2.homeGame = true;
+            }
+            else{
+                console.log("FATAL ERROR")
+            }
+
+            callback2(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2,  matchSquad1)
+        })
+    }
+
+    function decideWinner(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, callback3){
+        var winner = null;
+        request(newURL, function(error, response, html) {
+            $ = cheerio.load(html);
+            $('div.innings-requirement').filter(function () {
+                var d = $(this).text();
+                d = d.split(' won')
+                winner = d[0].trim();
+            });
+
+            if (winner === team1){
+                matchForTeam1.winner = true;
+                matchForTeam2.winner = false;
+            }
+            else {
+                matchForTeam1.winner = false;
+                matchForTeam2.winner = true;
+            }
+            callback3(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, firstInningCommentary)
+        });
+    }
+
+    function matchSquad1(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, callback4){
+        request(newURL, function(error, response, html) {
+            $ = cheerio.load(html);
+            $('li.commsMenuNonSelected').filter(function () {
+                var d = $(this).children().text().trim();
+                if (d !== "Fours" && d !== "Sixes" && d !== "Wickets") {
+                    if (d.indexOf('/') > 0) {
+                        //means its a bowler
+                        var tokens = d.split(' ');
+                        d = tokens[0].charAt(0) + tokens[1];
+                        var squad = ipl[currentSeason-1].teams[teamIndex(firstInnings.bowlingTeam)].squad;
+                        for (var i = 0; i < squad.length; i++) {
+                            var curr = squad[i].split(' ');
+                            curr = curr[0].charAt(0) + curr[1];
+                            if (curr === d) {
+                                firstInnings.bowlers.push(squad[i]);
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        var tokens = d.split(' ');
+                        d = tokens[0].charAt(0) + tokens[1];
+                        var squad = ipl[currentSeason-1].teams[teamIndex(firstInnings.battingTeam)].squad;
+                        for (var i = 0; i < squad.length; i++) {
+                            var curr = squad[i].split(' ');
+                            curr = curr[0].charAt(0) + curr[1];
+                            if (curr === d) {
+                                firstInnings.batsmen.push(squad[i]);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+            });
+            callback4(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, matchSquad2);
+        });
+    }
+
+    function firstInningCommentary(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, callback5){
+        request(newURL, function(error, response, html) {
+            $ = cheerio.load(html);
+            $('div.commentary-event').filter(function(){
+                var d = $(this).text().split("\t");
+                var l = d.length;
+                //remove the 0th, 2nd, 3rd, n-2th, n-1th, nth items
+                d.splice(l-3,3);
+                d.splice(0,1);
+                d.splice(1,2);
+
+                //getting rid of line breaks
+                for (var i = 0; i < d.length; i++) d[i] = d[i].replace(/(?:\r\n|\r|\n)/g, '');
+
+                //getting rid of extra space:
+                if (d.length > 1){
+                    d[0] = d[0].trim();
+                    var overInfo = d[0].split('.');
+                    var ballInfo = d[1].split(',');
+                    var playerInfo = ballInfo[0].split(' ');
+                    var run;
+
+                    if (ballInfo[1].indexOf('no') >= 0) run = 0;
+                    else if (ballInfo[1].indexOf('OUT') >= 0) run = 'W';
+                    else if (ballInfo[1].indexOf('FOUR') >= 0) run = 4;
+                    else if (ballInfo[1].indexOf('SIX') >= 0) run = 6;
+                    else run = Number(ballInfo[1].charAt(0));
+
+                    var bat;
+                    var bowl;
+
+                    for (var i = 0; i < firstInnings.batsmen.length; i++){
+                        if (firstInnings.batsmen[i].indexOf(playerInfo[2]) >= 0){
+                            bat = firstInnings.batsmen[i];
+                            break;
+                        }
+                    }
+
+                    for (var j = 0; j < firstInnings.bowlers.length; j++){
+                        if (firstInnings.bowlers[j].indexOf(playerInfo[0]) >= 0){
+                            bowl = firstInnings.bowlers[j];
+                            break;
+                        }
+                    }
+
+                    var newBall = new ball(overInfo[0], overInfo[1], run, bat, bowl);
+                    firstInnings.commentary.push(newBall);
+                }
+            })
+            callback5(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, secondInningsCommentary)
+        });
+
+    }
+
+    function matchSquad2(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, callback6){
+        var newURL = newURL.replace('innings=1', 'innings=2');
+        request(newURL, function(error, response, html) {
+            $ = cheerio.load(html);
+            $('li.commsMenuNonSelected').filter(function () {
+                var d = $(this).children().text().trim();
+                if (d !== "Fours" && d !== "Sixes" && d !== "Wickets") {
+                    if (d.indexOf('/') > 0) {
+                        //means its a bowler
+                        var tokens = d.split(' ');
+                        d = tokens[0].charAt(0) + tokens[1];
+                        var squad = ipl[currentSeason-1].teams[teamIndex(secondInnings.bowlingTeam)].squad;
+                        for (var i = 0; i < squad.length; i++) {
+                            var curr = squad[i].split(' ');
+                            curr = curr[0].charAt(0) + curr[1];
+                            if (curr === d) {
+                                secondInnings.bowlers.push(squad[i]);
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        var tokens = d.split(' ');
+                        d = tokens[0].charAt(0) + tokens[1];
+                        var squad = ipl[currentSeason-1].teams[teamIndex(secondInnings.battingTeam)].squad;
+                        for (var i = 0; i < squad.length; i++) {
+                            var curr = squad[i].split(' ');
+                            curr = curr[0].charAt(0) + curr[1];
+                            if (curr === d) {
+                                secondInnings.batsmen.push(squad[i]);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+            })
+            callback6(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, startMatchScrape)
+        });
+    }
+
+    function secondInningsCommentary(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, callback7){
+        request(newURL, function(error, response, html) {
+            $ = cheerio.load(html);
+            $('div.commentary-event').filter(function(){
+                var d = $(this).text().split("\t");
+                var l = d.length;
+                //remove the 0th, 2nd, 3rd, n-2th, n-1th, nth items
+                d.splice(l-3,3);
+                d.splice(0,1);
+                d.splice(1,2);
+
+                //getting rid of line breaks
+                for (var i = 0; i < d.length; i++) d[i] = d[i].replace(/(?:\r\n|\r|\n)/g, '');
+
+                //getting rid of extra space:
+                if (d.length > 1){
+                    d[0] = d[0].trim();
+                    var overInfo = d[0].split('.');
+                    var ballInfo = d[1].split(',');
+                    var playerInfo = ballInfo[0].split(' ');
+                    var run;
+
+                    if (ballInfo[1].indexOf('no') >= 0) run = 0;
+                    else if (ballInfo[1].indexOf('OUT') >= 0) run = 'W';
+                    else if (ballInfo[1].indexOf('FOUR') >= 0) run = 4;
+                    else if (ballInfo[1].indexOf('SIX') >= 0) run = 6;
+                    else run = Number(ballInfo[1].charAt(0));
+
+                    var bat;
+                    var bowl;
+
+                    for (var i = 0; i < secondInnings.batsmen.length; i++){
+                        if (secondInnings.batsmen[i].indexOf(playerInfo[2]) >= 0){
+                            bat = secondInnings.batsmen[i];
+                            break;
+                        }
+                    }
+
+                    for (var j = 0; j < secondInnings.bowlers.length; j++){
+                        if (secondInnings.bowlers[j].indexOf(playerInfo[0]) >= 0){
+                            bowl = secondInnings.bowlers[j];
+                            break;
+                        }
+                    }
+
+                    var newBall = new ball(overInfo[0], overInfo[1], run, bat, bowl);
+                    secondInnings.commentary.push(newBall);
+                }
+            })
+            matchForTeam1.firstInnings = firstInnings;
+            matchForTeam1.secondInnings = secondInnings;
+
+            matchForTeam2.firstInnings = firstInnings;
+            matchForTeam2.secondInnings = secondInnings;
+
+            ipl[currentSeason-1].teams[teamIndex(team1)].matches.push(matchForTeam1);
+            ipl[currentSeason-1].teams[teamIndex(team2)].matches.push(matchForTeam2);
+
+            console.log("OUR IPL DATA SO FAR!")
+            console.log(ipl[currentSeason-1]);
+
+            if (matchForTeam1.matchNumber < 1){
+                console.log('##########################Scraping a new match!!##########################')
+                var number = matchForTeam1.matchNumber + 1;
+                callback7(url, number, findHomeAwayTeam)
+            }
+            else{
+                console.log(JSON.stringify(ipl));
+            }
 
 
-
-    ////Let's scrape match data!!
-    //var url = 'http://www.espncricinfo.com/ipl/engine/match/' + (startingMatch + matchNumber) + '.html';
-    //
-    ////*************************************************************************
-    ////Collecting Data about the matches
-    ////*************************************************************************
-    //url = url.concat('?innings=1;view=commentary');
-    //request(url, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //
-    //    $('ul.tabs-block').filter(function(){
-    //        var d = $(this).children().text();
-    //        d = d.trim();
-    //        d = d.replace(/ innings/g, '*');
-    //        var tokens = d.split('*');
-    //
-    //        match.firstInnings.battingTeam = tokens[0].trim();
-    //        match.firstInnings.bowlingTeam = tokens[1].trim();
-    //
-    //        match.secondInnings.battingTeam = tokens[1].trim();
-    //        match.secondInnings.bowlingTeam = tokens[0].trim();
-    //    })
-    //
-    //    $('div.innings-requirement').filter(function(){
-    //        var d = $(this).text();
-    //        d = d.split(' won')
-    //        d = d[0].trim();
-    //
-    //        match.winner = d;
-    //    })
-    //
-    //    $('li.commsMenuNonSelected').filter(function() {
-    //        var d = $(this).children().text().trim();
-    //
-    //        if (d !== "Fours" && d !== "Sixes" && d !== "Wickets"){
-    //            if (d.indexOf('/') > 0){
-    //                //means its a bowler
-    //                var tokens = d.split(' ');
-    //                d = tokens[0].charAt(0) + tokens[1];
-    //                var squad = teams[teamIndex(match.firstInnings.bowlingTeam)].squad;
-    //                for (var i = 0; i < squad.length; i ++){
-    //                    var curr = squad[i].split(' ');
-    //                    curr = curr[0].charAt(0) + curr[1];
-    //                    if (curr === d){
-    //                        match.firstInnings.bowlers.push(squad[i]);
-    //                        break;
-    //                    }
-    //                }
-    //            }
-    //            else {
-    //                var tokens = d.split(' ');
-    //                d = tokens[0].charAt(0) + tokens[1];
-    //                var squad = teams[teamIndex(match.firstInnings.battingTeam)].squad;
-    //                for (var i = 0; i < squad.length; i ++){
-    //                    var curr = squad[i].split(' ');
-    //                    curr = curr[0].charAt(0) + curr[1];
-    //                    if (curr === d){
-    //                        match.firstInnings.batsmen.push(squad[i]);
-    //                        break;
-    //                    }
-    //                }
-    //            }
-    //        }
-    //
-    //    })
-    //
-    //    $('div.commentary-event').filter(function(){
-    //        var d = $(this).text().split("\t");
-    //        var l = d.length;
-    //        //remove the 0th, 2nd, 3rd, n-2th, n-1th, nth items
-    //        d.splice(l-3,3);
-    //        d.splice(0,1);
-    //        d.splice(1,2);
-    //
-    //        //getting rid of line breaks
-    //        for (var i = 0; i < d.length; i++) d[i] = d[i].replace(/(?:\r\n|\r|\n)/g, '');
-    //
-    //        //getting rid of extra space:
-    //        if (d.length > 1){
-    //            d[0] = d[0].trim();
-    //            var overInfo = d[0].split('.');
-    //            var ballInfo = d[1].split(',');
-    //            var playerInfo = ballInfo[0].split(' ');
-    //            var run;
-    //
-    //            if (ballInfo[1].indexOf('no') >= 0) run = 0;
-    //            else if (ballInfo[1].indexOf('OUT') >= 0) run = 'W';
-    //            else if (ballInfo[1].indexOf('FOUR') >= 0) run = 4;
-    //            else if (ballInfo[1].indexOf('SIX') >= 0) run = 6;
-    //            else run = Number(ballInfo[1].charAt(0));
-    //
-    //            var bat;
-    //            var bowl;
-    //
-    //            for (var i = 0; i < match.firstInnings.batsmen.length; i++){
-    //                if (match.firstInnings.batsmen[i].indexOf(playerInfo[2]) >= 0){
-    //                    bat = match.firstInnings.batsmen[i];
-    //                    break;
-    //                }
-    //            }
-    //
-    //            for (var j = 0; j < match.firstInnings.bowlers.length; j++){
-    //                if (match.firstInnings.bowlers[j].indexOf(playerInfo[0]) >= 0){
-    //                    bowl = match.firstInnings.bowlers[j];
-    //                    break;
-    //                }
-    //            }
-    //
-    //            var newBall = new ball(overInfo[0], overInfo[1], run, bat, bowl);
-    //            match.firstInnings.commentary.push(newBall);
-    //        }
-    //    })
-    //})
-    //
-    ////secondInnings
-    //url = url.replace('innings=1', 'innings=2');
-    //request(url, function(error, response, html){
-    //    $ = cheerio.load(html);
-    //    $('li.commsMenuNonSelected').filter(function() {
-    //        var d = $(this).children().text().trim();
-    //        if (d !== "Fours" && d !== "Sixes" && d !== "Wickets"){
-    //            if (d.indexOf('/') > 0){
-    //                //means its a bowler
-    //                var tokens = d.split(' ');
-    //                d = tokens[0].charAt(0) + tokens[1];
-    //                var squad = teams[teamIndex(match.secondInnings.bowlingTeam)].squad;
-    //                for (var i = 0; i < squad.length; i ++){
-    //                    var curr = squad[i].split(' ');
-    //                    curr = curr[0].charAt(0) + curr[1];
-    //                    if (curr === d){
-    //                        match.secondInnings.bowlers.push(squad[i]);
-    //                        break;
-    //                    }
-    //                }
-    //            }
-    //            else {
-    //                var tokens = d.split(' ');
-    //                d = tokens[0].charAt(0) + tokens[1];
-    //                var squad = teams[teamIndex(match.secondInnings.battingTeam)].squad;
-    //                for (var i = 0; i < squad.length; i ++){
-    //                    var curr = squad[i].split(' ');
-    //                    curr = curr[0].charAt(0) + curr[1];
-    //                    if (curr === d){
-    //                        match.secondInnings.batsmen.push(squad[i]);
-    //                        break;
-    //                    }
-    //                }
-    //            }
-    //        }
-    //
-    //    })
-    //
-    //    $('div.commentary-event').filter(function(){
-    //        var d = $(this).text().split("\t");
-    //        var l = d.length;
-    //        //remove the 0th, 2nd, 3rd, n-2th, n-1th, nth items
-    //        d.splice(l-3,3);
-    //        d.splice(0,1);
-    //        d.splice(1,2);
-    //
-    //        //getting rid of line breaks
-    //        for (var i = 0; i < d.length; i++) d[i] = d[i].replace(/(?:\r\n|\r|\n)/g, '');
-    //
-    //        //getting rid of extra space:
-    //        if (d.length > 1){
-    //            d[0] = d[0].trim();
-    //            var overInfo = d[0].split('.');
-    //            var ballInfo = d[1].split(',');
-    //            var playerInfo = ballInfo[0].split(' ');
-    //            var run;
-    //
-    //            if (ballInfo[1].indexOf('no') >= 0) run = 0;
-    //            else if (ballInfo[1].indexOf('OUT') >= 0) run = 'W';
-    //            else if (ballInfo[1].indexOf('FOUR') >= 0) run = 4;
-    //            else if (ballInfo[1].indexOf('SIX') >= 0) run = 6;
-    //            else run = Number(ballInfo[1].charAt(0));
-    //
-    //            var bat;
-    //            var bowl;
-    //
-    //            for (var i = 0; i < match.secondInnings.batsmen.length; i++){
-    //                if (match.secondInnings.batsmen[i].indexOf(playerInfo[2]) >= 0){
-    //                    bat = match.secondInnings.batsmen[i];
-    //                    break;
-    //                }
-    //            }
-    //
-    //            for (var j = 0; j < match.secondInnings.bowlers.length; j++){
-    //                if (match.secondInnings.bowlers[j].indexOf(playerInfo[0]) >= 0){
-    //                    bowl = match.secondInnings.bowlers[j];
-    //                    break;
-    //                }
-    //            }
-    //
-    //            var newBall = new ball(overInfo[0], overInfo[1], run, bat, bowl);
-    //            match.secondInnings.commentary.push(newBall)
-    //        }
-    //    })
-    //})
-    //
-    //setTimeout(function(){
-    //    season.matches.push(match);
-    //    console.log(JSON.stringify(season));
-    //}, 5000)
+        });
+    }
 })
 
 app.listen('8081')
