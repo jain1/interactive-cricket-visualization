@@ -58,6 +58,8 @@ var ipl = [];
 ipl.push(new season(currentSeason));
 ipl.push(new season(currentSeason + 1));
 
+var matchIndicies = [];
+
 app.get('/scrape', function(req, res){
     //*************************************************************************
     //Scraping Team Data
@@ -66,10 +68,30 @@ app.get('/scrape', function(req, res){
         matchStart = 335982;
 
     var teamURL = 'http://www.espncricinfo.com/ipl/content/squad/',
-        url = 'http://www.espncricinfo.com/ipl/engine/match/';
+        url = 'http://www.espncricinfo.com/ipl/engine/match/',
+        matchIndexURL = 'http://www.espncricinfo.com/ipl/engine/series/313494.html';
 
-    startTeamScrape(0,teamURL, makeTeam)
+    scrapeMatchIndex(startTeamScrape);
 
+    function scrapeMatchIndex (callbackInit){
+        request(matchIndexURL, function(error, response, html){
+            $ = cheerio.load(html);
+
+            $('span.potMatchLink').filter(function(){
+                d = $(this).children()[0].attribs.href;
+                tokens = d.split('/');
+                d = tokens[tokens.length - 1]; //last element
+                d = Number(d.split('.')[0])
+
+                matchIndicies.push(d);
+            })
+            //matchIndicies.sort();
+            console.log(matchIndicies.length);
+            console.log(matchIndicies);
+            callbackInit(0,teamURL,makeTeam);
+        })
+
+    }
 
     function startTeamScrape (number, teamURL, callback){
         var newURL = teamURL + (teamStart + number) + '.html';
@@ -117,7 +139,11 @@ app.get('/scrape', function(req, res){
     }
 
     function startMatchScrape(url, number, callback){
-        var newURL = url + (matchStart + number) + '.html?innings=1;view=commentary';
+        console.log('##########################Scraping a new match!!##########################')
+        console.log('this is match number: ' + (number + 1));
+        console.log(matchIndicies[number])
+        var newURL = url + (matchIndicies[number]) + '.html?innings=1;view=commentary';
+        console.log('Match URL: ' + newURL);
         request(newURL, function(error, response, html) {
             $ = cheerio.load(html);
             $('ul.tabs-block').filter(function () {
@@ -126,10 +152,26 @@ app.get('/scrape', function(req, res){
                 d = d.replace(/ innings/g, '*');
                 var tokens = d.split('*');
 
-                var team1 = tokens[0].trim();
-                var team2 = tokens[1].trim();
+                for (var i = 0; i < tokens.length-1; i++){
+                    if (tokens[i].indexOf('...') > -1){
+                        //get rid of the ... in the team name
+                        tokens[i] = tokens[i].split('...')[1].trim();
+                    }
+                }
 
-                callback(newURL, number, team1, team2, decideWinner)
+                if (tokens[0] !== undefined && tokens[1] !== undefined){
+                    var team1 = tokens[0].trim();
+                    var team2 = tokens[1].trim();
+
+                    console.log("Team 1 is: " + team1);
+                    console.log("Team 2 is: " + team2);
+
+                    callback(newURL, number, team1, team2, decideWinner)
+                }
+                else{
+                    console.log('%%%%%%%%%% Match Abandoned %%%%%%%%%%')
+                    callback(newURL, number, undefined, undefined, startMatchScrape)
+                }
             })
         })
     }
@@ -142,35 +184,62 @@ app.get('/scrape', function(req, res){
                 homeTeam = $(this).children().first().text();
             })
 
-            var matchForTeam1,
-                matchForTeam2,
-                firstInnings,
-                secondInnings;
+            if (team1 !== undefined){
+                var matchForTeam1,
+                    matchForTeam2,
+                    firstInnings,
+                    secondInnings;
 
-            matchForTeam1 = new match(number, true);
-            matchForTeam2 = new match(number, false);
+                matchForTeam1 = new match(number+1, true);
+                matchForTeam2 = new match(number+1, false);
 
-            firstInnings = new innings();
-            secondInnings = new innings();
+                firstInnings = new innings();
+                secondInnings = new innings();
 
-            firstInnings.battingTeam = team1;
-            firstInnings.bowlingTeam = team2;
-            secondInnings.battingTeam = team2;
-            secondInnings.bowlingTeam = team1;
+                firstInnings.battingTeam = team1;
+                firstInnings.bowlingTeam = team2;
+                secondInnings.battingTeam = team2;
+                secondInnings.bowlingTeam = team1;
 
-            if (team1 == homeTeam){
-                matchForTeam1.homeGame = true;
-                matchForTeam2.homeGame = false;
+                if (team1 == homeTeam){
+                    matchForTeam1.homeGame = true;
+                    matchForTeam2.homeGame = false;
+                }
+                else if (team2 == homeTeam) {
+                    matchForTeam1.homeGame = false;
+                    matchForTeam2.homeGame = true;
+                }
+                else{
+                    console.log("FATAL ERROR")
+                }
+
+                callback2(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2,  matchSquad1)
             }
-            else if (team2 == homeTeam) {
-                matchForTeam1.homeGame = false;
-                matchForTeam2.homeGame = true;
-            }
-            else{
-                console.log("FATAL ERROR")
-            }
+            else {
+                var counter = 0
+                var awayTeam;
+                $('div.team-1-name').filter(function () {
+                    awayTeam = $(this).children().last().text();
+                })
+                var match1 = new match(number+1);
+                match1.homeGame = true;
 
-            callback2(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2,  matchSquad1)
+                var match2 = new match(number+1);
+                match2.homeGame = false;
+
+                ipl[currentSeason-1].teams[teamIndex(homeTeam)].matches.push(match1);
+                ipl[currentSeason-1].teams[teamIndex(awayTeam)].matches.push(match2);
+
+                number = match1.matchNumber;
+                if (number < matchIndicies.length){
+                    callback2(url, number, findHomeAwayTeam)
+                }
+                else{
+                    console.log(JSON.stringify(ipl));
+                }
+
+
+            }
         })
     }
 
@@ -291,7 +360,7 @@ app.get('/scrape', function(req, res){
     }
 
     function matchSquad2(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, callback6){
-        var newURL = newURL.replace('innings=1', 'innings=2');
+        newURL = newURL.replace('innings=1', 'innings=2');
         request(newURL, function(error, response, html) {
             $ = cheerio.load(html);
             $('li.commsMenuNonSelected').filter(function () {
@@ -389,12 +458,11 @@ app.get('/scrape', function(req, res){
             ipl[currentSeason-1].teams[teamIndex(team1)].matches.push(matchForTeam1);
             ipl[currentSeason-1].teams[teamIndex(team2)].matches.push(matchForTeam2);
 
-            console.log("OUR IPL DATA SO FAR!")
-            console.log(ipl[currentSeason-1]);
+            //console.log("OUR IPL DATA SO FAR!")
+            //console.log(ipl[currentSeason-1]);
 
-            if (matchForTeam1.matchNumber < 1){
-                console.log('##########################Scraping a new match!!##########################')
-                var number = matchForTeam1.matchNumber + 1;
+            var number = matchForTeam1.matchNumber;
+            if (number < matchIndicies.length){
                 callback7(url, number, findHomeAwayTeam)
             }
             else{
