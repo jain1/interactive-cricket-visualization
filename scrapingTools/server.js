@@ -46,7 +46,6 @@ function ball(over, ball, run, batsman, bowler){
 
 //helper function
 function teamIndex(team){
-
     for (var i = 0; i < ipl[currentSeason-1].teams.length; i++){
         if (ipl[currentSeason-1].teams[i].teamName == team) return i;
     }
@@ -457,9 +456,6 @@ app.get('/scrape', function(req, res){
 
             ipl[currentSeason-1].teams[teamIndex(team1)].matches.push(matchForTeam1);
             ipl[currentSeason-1].teams[teamIndex(team2)].matches.push(matchForTeam2);
-
-            //console.log("OUR IPL DATA SO FAR!")
-            //console.log(ipl[currentSeason-1]);
 
             var number = matchForTeam1.matchNumber;
             if (number < matchIndicies.length){

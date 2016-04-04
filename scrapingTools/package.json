@@ -1,12 +1,12 @@
 {
   "name"         : "node-web-scrape",
-  "version"      : "0.0.1",
-  "description"  : "Scrape le web.",
+  "version"      : "1.0.1",
+  "description"  : "Scrape cricinfo.com IPL match data.",
   "main"         : "server.js",
-  "author"       : "Scotch",
+  "author"       : "Pratik Jain",
   "repository"   : {
     "type" : "git",
-    "url"  : "https://github.com/scotch-io/node-web-scraper"
+    "url"  : "https://github.com/jain1/interactive-cricket-visualization"
   },
   "dependencies" : {
     "express"    : "latest",
