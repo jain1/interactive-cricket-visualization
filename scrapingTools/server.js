@@ -12,6 +12,13 @@ var teams = require('./teams.json');
 function season(seasonNumber){
     this.seasonNumber = seasonNumber;
     this.teams = [];
+    //average win = [by runs, by wickets, max by runs, max by wickets]
+    this.averageRunMargin = [0, 0];
+    this.averageWicketMargin = [0,0]
+    //maxMargin = [max by runs, max by wickets]
+    this.maxRunMargin = 0;
+    this.maxWicketMargin = 0;
+    this.numberOfAbandonedMatches = 0;
 }
 
 function team(teamName){
@@ -73,22 +80,24 @@ app.get('/scrape', function(req, res){
     scrapeMatchIndex(startTeamScrape);
 
     function scrapeMatchIndex (callbackInit){
-        request(matchIndexURL, function(error, response, html){
-            $ = cheerio.load(html);
+        if (matchIndicies.length == 0) { //to fix bug that reloads the page and restarts the web scrapping session
+            request(matchIndexURL, function (error, response, html) {
+                $ = cheerio.load(html);
 
-            $('span.potMatchLink').filter(function(){
-                d = $(this).children()[0].attribs.href;
-                tokens = d.split('/');
-                d = tokens[tokens.length - 1]; //last element
-                d = Number(d.split('.')[0])
+                $('span.potMatchLink').filter(function () {
+                    d = $(this).children()[0].attribs.href;
+                    tokens = d.split('/');
+                    d = tokens[tokens.length - 1]; //last element
+                    d = Number(d.split('.')[0])
 
-                matchIndicies.push(d);
+                    matchIndicies.push(d);
+                })
+                //matchIndicies.sort();
+                console.log(matchIndicies.length);
+                console.log(matchIndicies);
+                callbackInit(0, teamURL, makeTeam);
             })
-            //matchIndicies.sort();
-            console.log(matchIndicies.length);
-            console.log(matchIndicies);
-            callbackInit(0,teamURL,makeTeam);
-        })
+        }
 
     }
 
@@ -229,6 +238,8 @@ app.get('/scrape', function(req, res){
                 ipl[currentSeason-1].teams[teamIndex(homeTeam)].matches.push(match1);
                 ipl[currentSeason-1].teams[teamIndex(awayTeam)].matches.push(match2);
 
+                ipl[currentSeason-1].numberOfAbandonedMatches++; //increment number of abandoned matches
+
                 number = match1.matchNumber;
                 if (number < matchIndicies.length){
                     callback2(url, number, findHomeAwayTeam)
@@ -243,13 +254,34 @@ app.get('/scrape', function(req, res){
     }
 
     function decideWinner(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, callback3){
-        var winner = null;
+        var winner = [],
+            margin;
         request(newURL, function(error, response, html) {
             $ = cheerio.load(html);
             $('div.innings-requirement').filter(function () {
                 var d = $(this).text();
                 d = d.split(' won')
+                console.log(d)
                 winner = d[0].trim();
+
+                margin = Number(d[1].trim().split(' ')[1]);
+
+                if (d[1].indexOf("run") >= 0){
+                    ipl[currentSeason-1].averageRunMargin[0] += margin;
+                    ipl[currentSeason-1].averageRunMargin[1]++;
+                    console.log("the margin by runs is: " + margin);
+
+                    //check if this is the max margin
+                    if (ipl[currentSeason-1].maxRunMargin < margin) ipl[currentSeason-1].maxRunMargin = margin;
+                }
+                else{
+                    ipl[currentSeason-1].averageWicketMargin[0] += margin;
+                    ipl[currentSeason-1].averageWicketMargin[1]++;
+                    console.log("the margin by wickets is: " + margin);
+                    //check if this is the max margin
+                    if (ipl[currentSeason-1].maxWicketMargin < margin) ipl[currentSeason-1].maxWicketMargin = margin;
+                }
+
             });
 
             if (winner === team1){
@@ -458,11 +490,23 @@ app.get('/scrape', function(req, res){
             ipl[currentSeason-1].teams[teamIndex(team2)].matches.push(matchForTeam2);
 
             var number = matchForTeam1.matchNumber;
-            if (number < matchIndicies.length){
+            if (number < matchIndicies.length){ //matchIndicies.length
                 callback7(url, number, findHomeAwayTeam)
             }
             else{
-                console.log(JSON.stringify(ipl));
+                console.log("Before calculating average!!")
+                console.log(ipl[currentSeason-1].averageRunMargin);
+                console.log(ipl[currentSeason-1].averageWicketMargin)
+
+                //calculate the average margin by dividing by total number of matches
+                ipl[currentSeason-1].averageRunMargin[0] /= (ipl[currentSeason-1].averageRunMargin[1]);
+                ipl[currentSeason-1].averageWicketMargin[0] /= (ipl[currentSeason-1].averageWicketMargin[1]);
+
+                console.log(ipl[currentSeason-1].averageRunMargin);
+                console.log(ipl[currentSeason-1].averageWicketMargin)
+                console.log("Max wins: " + ipl[currentSeason-1].maxRunMargin + ", " + ipl[currentSeason-1].maxWicketMargin);
+
+                console.log(JSON.stringify(ipl)); //prints out the JSON to the console
             }
 
 
