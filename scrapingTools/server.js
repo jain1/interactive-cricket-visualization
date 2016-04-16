@@ -132,7 +132,7 @@ app.get('/scrape', function(req, res){
             })
 
             //*****print statement to check current team's season squad
-            //console.log(ipl[currentSeason - 1].teams[number].squad);
+            console.log(ipl[currentSeason - 1].teams[number].squad);
 
             number++;
             if (number < 8){
@@ -305,25 +305,79 @@ app.get('/scrape', function(req, res){
                     if (d.indexOf('/') > 0) {
                         //means its a bowler
                         var tokens = d.split(' ');
-                        d = tokens[0].charAt(0) + tokens[1];
+
+                        //console.log('Preprocessed bowler info: ' + tokens);
+                        //get rid of empty strings in tokens
+                        var temp = [];
+                        for (var k = 0; k < tokens.length; k++){
+                            if (tokens[k] !== '') temp.push(tokens[k]);
+                        }
+                        tokens = temp;
+                        if (tokens.length > 3) tokens.splice(0,1);
+                        //console.log('Processed bowler info: ' + tokens);
+
+                        if (tokens.length == 2) d = tokens[0];
+                        else d = tokens[0].charAt(0) + tokens[1];
+
+                        var d2;
+                        if (tokens[0].length > 1) d2 = tokens[0].charAt(1) + tokens[1];
+
+                        //console.log('$$ Our bowler candidate: ' + d);
+
                         var squad = ipl[currentSeason-1].teams[teamIndex(firstInnings.bowlingTeam)].squad;
                         for (var i = 0; i < squad.length; i++) {
                             var curr = squad[i].split(' ');
-                            curr = curr[0].charAt(0) + curr[1];
-                            if (curr === d) {
+
+                            //sometimes have trailing spaces
+                            if (curr.indexOf('') >= 0){
+                                curr.splice(curr.indexOf(''),1);
+                            }
+                            //console.log('Processed curr: ' + curr);
+
+                            //check length to see if it just last name
+                            if (curr.length > 1 && (curr[0].charAt(0) + curr[1] === d || (d2 !== undefined && curr[0].charAt(0) + curr[1] === d2))){
+                                firstInnings.bowlers.push(squad[i]);
+                                break;
+                            }
+                            else if (curr.length == 1 && curr[0] === d.substr(1, d.length-1)){
                                 firstInnings.bowlers.push(squad[i]);
                                 break;
                             }
                         }
+                        //console.log();
                     }
                     else {
                         var tokens = d.split(' ');
-                        d = tokens[0].charAt(0) + tokens[1];
+
+                        //get rid of empty strings in tokens
+                        var temp = [];
+                        for (var k = 0; k < tokens.length; k++){
+                            if (tokens[k] !== '') temp.push(tokens[k]);
+                        }
+                        tokens = temp;
+                        if (tokens.length > 3) tokens.splice(0,1);
+
+                        if (tokens.length == 2) d = tokens[0];
+                        else d = tokens[0].charAt(0) + tokens[1];
+
+                        var d2;
+                        if (tokens[0].length > 1) d2 = tokens[0].charAt(1) + tokens[1];
+
                         var squad = ipl[currentSeason-1].teams[teamIndex(firstInnings.battingTeam)].squad;
                         for (var i = 0; i < squad.length; i++) {
                             var curr = squad[i].split(' ');
-                            curr = curr[0].charAt(0) + curr[1];
-                            if (curr === d) {
+
+                            //sometimes have trailing spaces
+                            if (curr.indexOf('') >= 0){
+                                curr.splice(curr.indexOf(''),1);
+                            }
+
+                            //check length to see if it just last name
+                            if (curr.length > 1 && (curr[0].charAt(0) + curr[1] === d || (d2 !== undefined && curr[0].charAt(0) + curr[1] === d2))){
+                                firstInnings.batsmen.push(squad[i]);
+                                break;
+                            }
+                            else if (curr.length == 1 && curr[0] === d.substr(1, d.length-1)){
                                 firstInnings.batsmen.push(squad[i]);
                                 break;
                             }
@@ -332,6 +386,12 @@ app.get('/scrape', function(req, res){
                 }
 
             });
+            console.log('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$');
+            console.log("finsihed scrapping match squad for first innings");
+            console.log(firstInnings.batsmen);
+            console.log(firstInnings.bowlers);
+            console.log('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$');
+
             callback4(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, matchSquad2);
         });
     }
@@ -367,19 +427,42 @@ app.get('/scrape', function(req, res){
                     var bat;
                     var bowl;
 
+                    //console.log('Pre-Processed Player Info: ' + playerInfo);
+                    //preprocessing player info
+                    if (playerInfo.length > 3){
+                        if (playerInfo[1] === 'to'){
+                            //splice 2nd index (3rd element)
+                            playerInfo.splice(2,1);
+                        }
+                        else if (playerInfo[2] === 'to'){
+                            //splice 1st index (2nd element)
+                            playerInfo.splice(1,1);
+                        }
+                    }
+                    //console.log('Processed Player Info: ' + playerInfo);
+
+
+                    //console.log('&& Looking for batsman: ' + playerInfo[2]);
                     for (var i = 0; i < firstInnings.batsmen.length; i++){
+                        //console.log('comparing against: ' + firstInnings.batsmen[i]);
                         if (firstInnings.batsmen[i].indexOf(playerInfo[2]) >= 0){
                             bat = firstInnings.batsmen[i];
                             break;
                         }
                     }
 
+                    //console.log('&& Looking for bowler: ' + playerInfo[0]);
                     for (var j = 0; j < firstInnings.bowlers.length; j++){
+                        //console.log('comparing against: ' + firstInnings.bowlers[j]);
                         if (firstInnings.bowlers[j].indexOf(playerInfo[0]) >= 0){
                             bowl = firstInnings.bowlers[j];
                             break;
                         }
                     }
+
+                    //console.log('batsmen: ' + bat);
+                    //console.log('bowler: ' + bowl);
+                    //console.log();
 
                     var newBall = new ball(overInfo[0], overInfo[1], run, bat, bowl);
                     firstInnings.commentary.push(newBall);
@@ -400,12 +483,36 @@ app.get('/scrape', function(req, res){
                     if (d.indexOf('/') > 0) {
                         //means its a bowler
                         var tokens = d.split(' ');
-                        d = tokens[0].charAt(0) + tokens[1];
+
+                        //get rid of empty strings in tokens
+                        var temp = [];
+                        for (var k = 0; k < tokens.length; k++){
+                            if (tokens[k] !== '') temp.push(tokens[k]);
+                        }
+                        tokens = temp;
+                        if (tokens.length > 3) tokens.splice(0,1);
+
+                        if (tokens.length == 2) d = tokens[0];
+                        else d = tokens[0].charAt(0) + tokens[1];
+
+                        var d2;
+                        if (tokens[0].length > 1) d2 = tokens[0].charAt(1) + tokens[1];
+
                         var squad = ipl[currentSeason-1].teams[teamIndex(secondInnings.bowlingTeam)].squad;
                         for (var i = 0; i < squad.length; i++) {
                             var curr = squad[i].split(' ');
-                            curr = curr[0].charAt(0) + curr[1];
-                            if (curr === d) {
+
+                            //sometimes have trailing spaces
+                            if (curr.indexOf('') >= 0){
+                                curr.splice(curr.indexOf(''),1);
+                            }
+
+                            //check length to see if it just last name
+                            if (curr.length > 1 && (curr[0].charAt(0) + curr[1] === d || (d2 !== undefined && curr[0].charAt(0) + curr[1] === d2))){
+                                secondInnings.bowlers.push(squad[i]);
+                                break;
+                            }
+                            else if (curr.length == 1 && curr[0] === d.substr(1, d.length-1)){
                                 secondInnings.bowlers.push(squad[i]);
                                 break;
                             }
@@ -413,12 +520,37 @@ app.get('/scrape', function(req, res){
                     }
                     else {
                         var tokens = d.split(' ');
-                        d = tokens[0].charAt(0) + tokens[1];
+
+
+                        //get rid of empty strings in tokens
+                        var temp = [];
+                        for (var k = 0; k < tokens.length; k++){
+                            if (tokens[k] !== '') temp.push(tokens[k]);
+                        }
+                        tokens = temp;
+                        if (tokens.length > 3) tokens.splice(0,1);
+
+                        if (tokens.length == 2) d = tokens[0];
+                        else d = tokens[0].charAt(0) + tokens[1];
+
+                        var d2;
+                        if (tokens[0].length > 1) d2 = tokens[0].charAt(1) + tokens[1];
+
                         var squad = ipl[currentSeason-1].teams[teamIndex(secondInnings.battingTeam)].squad;
                         for (var i = 0; i < squad.length; i++) {
                             var curr = squad[i].split(' ');
-                            curr = curr[0].charAt(0) + curr[1];
-                            if (curr === d) {
+
+                            //sometimes have trailing spaces
+                            if (curr.indexOf('') >= 0){
+                                curr.splice(curr.indexOf(''),1);
+                            }
+
+                            //check length to see if it just last name
+                            if (curr.length > 1 && (curr[0].charAt(0) + curr[1] === d || (d2 !== undefined && curr[0].charAt(0) + curr[1] === d2))){
+                                secondInnings.batsmen.push(squad[i]);
+                                break;
+                            }
+                            else if (curr.length == 1 && curr[0] === d.substr(1, d.length-1)){
                                 secondInnings.batsmen.push(squad[i]);
                                 break;
                             }
@@ -427,6 +559,10 @@ app.get('/scrape', function(req, res){
                 }
 
             })
+            console.log("finsihed scrapping match squad for second innings");
+            console.log(secondInnings.batsmen);
+            console.log(secondInnings.bowlers);
+            console.log('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$');
             callback6(newURL, matchForTeam1, matchForTeam2, firstInnings, secondInnings, team1, team2, startMatchScrape)
         });
     }
@@ -462,6 +598,18 @@ app.get('/scrape', function(req, res){
                     var bat;
                     var bowl;
 
+                    //preprocessing player info
+                    if (playerInfo.length > 3){
+                        if (playerInfo[1] === 'to'){
+                            //splice 2nd index (3rd element)
+                            playerInfo.splice(2,1);
+                        }
+                        else if (playerInfo[2] === 'to'){
+                            //splice 1st index (2nd element)
+                            playerInfo.splice(1,1);
+                        }
+                    }
+
                     for (var i = 0; i < secondInnings.batsmen.length; i++){
                         if (secondInnings.batsmen[i].indexOf(playerInfo[2]) >= 0){
                             bat = secondInnings.batsmen[i];
@@ -490,6 +638,9 @@ app.get('/scrape', function(req, res){
             ipl[currentSeason-1].teams[teamIndex(team2)].matches.push(matchForTeam2);
 
             var number = matchForTeam1.matchNumber;
+            //if (number < 2){ //USE FOR TESTING PURPOSES
+            //    callback7(url, number, findHomeAwayTeam)
+            //}
             if (number < matchIndicies.length){ //matchIndicies.length
                 callback7(url, number, findHomeAwayTeam)
             }
