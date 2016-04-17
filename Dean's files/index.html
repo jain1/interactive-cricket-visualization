@@ -20,13 +20,14 @@
           <button class="dropbtn" onclick="dropdown()"></button>
           <div class="dropdown-content" id="dropdown-list">
             <div style="z-index: 100;">
+            <a href="#" id="refresh-button">Restart/Refresh</a>
             <a href="#">About</a>
             </div>
           </div>
         </li>
         <li><a>Cricket Visualization</a></li>
-        <!-- <li><a>|</a></li> -->
-        <li style="float: right;"><label class='nav-contents'>Competition:</label>
+        <li id="team-logo"></li>
+        <li id="breadcrumb"><label class='nav-contents'>Competition:</label>
           <select id="seasonSelect" onchange="treemap(this.options[this.selectedIndex].value)" class='nav-contents'>
               <option disabled selected value> -- select an option -- </option>
               <option value="1" on>IPL Season 2008</option>
@@ -45,12 +46,6 @@
       <div class="treemap-container"></div>
       <div id="slider-container">
         <p>Drag the slider to see the performance of teams throughout the season:</p>
-        <!-- <input type="range" min="1" max="16" value="16" id="slider" title='slide'>
-        <br>
-        <label for="slider" 
-             style="display: block; margin: 0;">
-             <span id="slider-value">Final</span>
-        </label> -->
         <div class="slidershell" id="slidershell">
           <div class="sliderfill" id="sliderfill"></div>
           <div class="slidertrack" id="slidertrack"></div>

@@ -1,8 +1,13 @@
 function treemap(seasonNum) {
 
+  d3.select("#refresh-button").on("click", function() { location.reload(); });
+
   var sliderPosition = 16;
   var treemapDiv = document.querySelector(".treemap-container");
   treemapDiv.innerHTML = "";
+
+  d3.select("#breadcrumb").html("IPL Season " + seasonNum)
+                          .style("padding", "16px");
 
   var sliderContainer = document.querySelector("#slider-container");
   sliderContainer.style.visibility = "visible";
@@ -44,15 +49,15 @@ function treemap(seasonNum) {
           var noOfMatchesPlayedByEachTeamAtLeagueStage = (2*(seasonTeams.length-1));
           for (j=0; j<maxNoOfMatches; j++) {
             if (typeof matches[j] != "undefined") {
-              if(matches[j].winner == true) {
+              if(matches[j].winner[0] == true) {
                 if(j>13) {
                   totalLeagueStagePoints += 4;
                 } else {
                   totalLeagueStagePoints += 2;
                 }
-              } else if (matches[j].winner == null) {
+              } else if (matches[j].winner[0] == null) {
                 totalLeagueStagePoints++;
-              } else if (matches[j].winner == false) {
+              } else if (matches[j].winner[0] == false) {
                 if(j>13) {
                   totalLeagueStagePoints += 2;
                 } else {
@@ -67,7 +72,7 @@ function treemap(seasonNum) {
             for(j=noOfMatchesPlayedByEachTeamAtLeagueStage; j<matches.length; j++) {
 
               if(j == maxNoOfMatches-1) {
-                if(matches[j].winner == true) {
+                if(matches[j].winner[0] == true) {
                   teamInfo.topRank = "(C)";
                 } else {
                   teamInfo.topRank = "(R)";
@@ -288,13 +293,20 @@ function showValue(val) {
   var loc = pc * tracksize;
   if(val == slider.max) {
     rangevalue.innerHTML = "Final";
+    console.log("final");
   } else if(val == slider.max - 1) {
     rangevalue.innerHTML = "Semi-finals";
   } else {
     rangevalue.innerHTML = "Match " + val;
   }
-  //rangevalue.style.top = 30 + "px";
-  //rangevalue.style.left = (loc - 35) + "px";
+  var degrees = 360 * pc;
+  var rotation = "rotate(" + degrees + "deg)";
+  
+  
+  thumb.style.webkitTransform = rotation;
+  thumb.style.MozTransform = rotation;
+  thumb.style.msTransform = rotation;
+
   rangevalue.style.top = (0) + "px";
   rangevalue.style.left = (450) + "px";
   thumb.style.top =  (3) + "px";
