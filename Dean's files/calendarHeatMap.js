@@ -45,11 +45,78 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 	      }
 
     	});
+
 		console.log(generatedData);
 		var sizeOfRects = (widthCHM / generatedData.length);
 		var sizeOfRects = sizeOfRects * .90;
+		
+		var tooltip = d3.select(".calendar-heat-map").append("div")
+                  .attr("class", "tooltip")
+                  .style("opacity", 0);
 
-//defining color scales: ----------
+        var calendarHeatMap = d3.select(".calendar-heat-map")
+								.append("svg")
+								.attr("width", widthCHM)
+								.attr("height", heightCHM)
+								.append("g")
+								.attr("transform", "translate(50,50)");
+
+		var teamLogoSrc = "img/" + teamN + ".png";
+
+		calendarHeatMap.append("svg:image")
+					    .attr("xlink:href", teamLogoSrc)
+					    .attr("x", "-50")
+		                .attr("y", "-60")
+		                .attr("width", "100")
+		                .attr("height", "100");
+
+		// coloring separator for group stage and knockout stage of tournament
+
+		var noOfMatches = generatedData.length;
+		var knockoutMark = widthCHM/noOfMatches;
+		if (noOfMatches==14) {
+			knockoutMark = 105;
+		} else if (noOfMatches==15) {
+			knockoutMark += 27;
+		} else {
+			knockoutMark += 26;
+		}
+
+	    calendarHeatMap.append("polygon")
+    					//.attr("class", "background-rect")
+					    .attr("points", function() {
+							    var x1 = 50;
+							    var y1 = 0;
+							    var x2 = 900;
+					    		var y2 = 0;
+					    		var x3 = 900;
+					    		var y3 = 70;
+					    		var x4 = 50;
+					    		var y4 = 70;
+					    		
+					    		return "" + x1 + "," + y1 + "," + x2 + "," + y2 + "," + x3 + "," + y3 + "," + x4 + "," + y4;
+					    	})
+					    .attr("fill", "#BAEEE4");
+
+	    calendarHeatMap.append("rect")
+    					.attr("class", "background-rect")
+					    .attr("width", "100%")
+					    .attr("height", 70)
+					    .attr("fill", "lavender")
+					    .attr("x", function() { console.log(knockoutMark - 5 ) ;return (knockoutMark - 5) + "%"; })
+					    .attr("y", 0);
+
+	    calendarHeatMap.append("line")
+					    .attr("x1", function() { return (knockoutMark - 5) + "%"; })
+					    .attr("y1", 0)
+					    .attr("x2", function() { return (knockoutMark - 5) + "%"; })
+					    .attr("y2", 70)
+					    .attr("stroke", "black")
+					    .style("stroke-dasharray", ("3, 3"));
+
+		// ----------------------------------
+
+		//defining color scales: ----------
 		var winByRunsScale = d3.scale.quantize()
 						.domain([generatedData.maxRunMargin, 0])
 						.range(["#13762e", "#178c37", "#1aa23f", "#1eb848", "#22ce51", "#42e06d"]);
@@ -66,29 +133,11 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 		var lossByWicketsScale = d3.scale.quantize()
 						.domain([generatedData.maxWicketMargin, 0])
 						.range(["#b30000", "#cc0000", "#e60000", "#ff0000", "#ff3333", "#ff4d4d"]);
-// ----------------------------------
+		// ----------------------------------
 
-		var tooltip = d3.select(".calendar-heat-map").append("div")
-                  .attr("class", "tooltip")
-                  .style("opacity", 0);
 
-		var calendarHeatMap = d3.select(".calendar-heat-map")
-								.append("svg")
-								.attr("width", widthCHM)
-								.attr("height", heightCHM)
-								.append("g")
-								.attr("transform", "translate(50,50)");
 
-		var teamLogoSrc = "img/" + teamN + ".png";
-
-		calendarHeatMap.append("svg:image")
-					    .attr("xlink:href", teamLogoSrc)
-					    .attr("x", "-50")
-		                .attr("y", "-60")
-		                .attr("width", "100")
-		                .attr("height", "100");
-	
-
+		
 		var bars = calendarHeatMap.selectAll("rect")
 								  .data(generatedData)
 								  .enter()
@@ -163,8 +212,8 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 								              .attr("stroke-width", 0);
 								  		})
 								  	.on("click", function(d, i) {
-								  			d3.selectAll("polygon").remove().transition().duration(200);
-								  			d3.selectAll("line").remove().transition().duration(200);
+								  			d3.selectAll("polygon#triangle").remove().transition().duration(200);
+								  			d3.selectAll("line.select-line").remove().transition().duration(200);
 								  			d3.select("g").append("polygon").transition().duration(200)
 								  			.attr("id", "triangle")
 								  			.attr("points", function() {
@@ -187,6 +236,7 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 								  				})
 								  			.attr("fill", "white");
 								  			d3.select("g").append("line").transition().duration(200)
+								  						.attr("class", "select-line")
 											  			.attr("x1", -150)
 											  			.attr("x2", function() {
 											  					var xDetect;
@@ -202,6 +252,7 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 											  			.attr("stroke", "#616161")
 											  			.attr("stroke-width", 1);
 								  			d3.select("g").append("line").transition().duration(200)
+								  						.attr("class", "select-line")
 											  			.attr("x1", function() {
 											  					var xDetect;
 														  		if (i>13) {
@@ -262,6 +313,8 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 									.attr("y", 13)
 					                .attr("width", "16")
 					                .attr("height", "16");
+
+
 
 	});
 	
