@@ -4,9 +4,8 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 
 	var widthCHM = 960;
   	var heightCHM = 150;
-	
+
 	var treemapSelected = document.querySelector(".treemap");
-	//treemapSelected.style.visibility = "hidden";
 	treemapSelected.innerHTML = "";
 
 	d3.json("data.json", function(error, data) {
@@ -39,66 +38,35 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 	        		generatedData[i].opponent = matches[i].firstInnings.battingTeam;
 	        	}
 	        }
-
-	        //generatedData = matches;
-	        
-	        /*
-	        for (i=0; i<seasonTeams.length; i++) {
-	          var team = seasonTeams[i];
-	          var teamInfo = {name: team.teamName, size: 0, progressionArray: [], topRank: ""};
-	          teamInfo.name = team.teamName;
-	          teamInfo.progressionArray = new Array(14);
-	          var totalLeagueStagePoints = 0;
-	          var matches = team.matches;
-	          var noOfMatchesPlayedByEachTeamAtLeagueStage = (2*(seasonTeams.length-1));
-	          for (j=0; j<maxNoOfMatches; j++) {
-	            if (typeof matches[j] != "undefined") {
-	              if(matches[j].winner[0] == true) {
-	                if(j>13) {
-	                  totalLeagueStagePoints += 4;
-	                } else {
-	                  totalLeagueStagePoints += 2;
-	                }
-	              } else if (matches[j].winner[0] == null) {
-	                totalLeagueStagePoints++;
-	              } else if (matches[j].winner[0] == false) {
-	                if(j>13) {
-	                  totalLeagueStagePoints += 2;
-	                } else {
-	                  totalLeagueStagePoints = totalLeagueStagePoints;
-	                }
-	              }
-	            }
-	            teamInfo.progressionArray[j] = totalLeagueStagePoints;
-	          }
-	          if(matches.length > leagueStageMatchesPerTeam) {
-	            console.log(team.teamName);
-	            for(j=noOfMatchesPlayedByEachTeamAtLeagueStage; j<matches.length; j++) {
-
-	              if(j == maxNoOfMatches-1) {
-	                if(matches[j].winner[0] == true) {
-	                  teamInfo.topRank = "(C)";
-	                } else {
-	                  teamInfo.topRank = "(R)";
-	                }
-	              }
-
-	            }
-	          }
-	          
-	          teamInfo.size = teamInfo.progressionArray[sliderPosition-1] + 2;
-	          teamInfoArray[i] = teamInfo;
-	        }
-	        */
-	        //generatedJSON = {name: "tree", children: teamInfoArray};
+	        generatedData.averageRunMargin = d.averageRunMargin;
+	        generatedData.averageWicketMargin = d.averageWicketMargin;
+	        generatedData.maxRunMargin = d.maxRunMargin;
+	        generatedData.maxWicketMargin = d.maxWicketMargin;
 	      }
 
     	});
 		console.log(generatedData);
-		console.log(generatedData.length);
 		var sizeOfRects = (widthCHM / generatedData.length);
 		var sizeOfRects = sizeOfRects * .90;
-		console.log(sizeOfRects);
+
+//defining color scales: ----------
+		var winByRunsScale = d3.scale.quantize()
+						.domain([generatedData.maxRunMargin, 0])
+						.range(["#13762e", "#178c37", "#1aa23f", "#1eb848", "#22ce51", "#42e06d"]);
+						
+		var winByWicketsScale = d3.scale.quantize()
+						.domain([generatedData.maxWicketMargin, 0])
+						.range(["#13762e", "#178c37", "#1aa23f", "#1eb848", "#22ce51", "#42e06d"]);
+						
+
+		var lossByRunsScale = d3.scale.quantize()
+						.domain([generatedData.maxRunMargin, 0])
+						.range(["#b30000", "#cc0000", "#e60000", "#ff0000", "#ff3333", "#ff4d4d"]);
+
+		var lossByWicketsScale = d3.scale.quantize()
+						.domain([generatedData.maxWicketMargin, 0])
+						.range(["#b30000", "#cc0000", "#e60000", "#ff0000", "#ff3333", "#ff4d4d"]);
+// ----------------------------------
 
 		var tooltip = d3.select(".calendar-heat-map").append("div")
                   .attr("class", "tooltip")
@@ -110,13 +78,7 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 								.attr("height", heightCHM)
 								.append("g")
 								.attr("transform", "translate(50,50)");
-/*
-		d3.select(".calendar-heat-map").style("background", "url('img/" + teamN + ".png')")
-									   .style("background-size", "contain")
-									   //.style("background-position", "center")
-									   .style("background-repeat", "no-repeat");
-*/
-		
+
 		var teamLogoSrc = "img/" + teamN + ".png";
 
 		calendarHeatMap.append("svg:image")
@@ -144,17 +106,44 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 								  	.attr("y", 15)
 								  	.attr("fill", function(d) {
 								  			if (d.winner[0]==true) {
-								  				return "green";
+								  				//return "green";
+								  				if((d.winner[1][1] == "runs") || (d.winner[1][1] == "run")) {
+								  					return winByRunsScale(d.winner[1][0]);
+								  				} else if((d.winner[1][1] == "wickets") || (d.winner[1][1] == "wickets")) {
+								  					return winByWicketsScale(d.winner[1][0]);
+								  				}
 								  			} else if (d.winner[0]==null) {
 								  				return "gray";
 								  			} else if (d.winner[0]==false) {
-								  				return "red";
+								  				//return "red";
+								  				if((d.winner[1][1] == "runs") || (d.winner[1][1] == "run")) {
+								  					return lossByRunsScale(d.winner[1][0]);
+								  				} else if((d.winner[1][1] == "wickets") || (d.winner[1][1] == "wickets")) {
+								  					return lossByWicketsScale(d.winner[1][0]);
+								  				}
 								  			}
 								  		})
-								  	.attr("rx", 5)
+								  	.attr("rx", 4)
 								  	.on("mouseover", function(d, i) {
-								  			//tooltip.style("opacity", .9);
-								  			tooltip.html("v " + d.opponent + "<br>match number: " + d.matchNumber)
+								  			tooltip.html(function() { 
+								  					var str = "";
+								  					if (d.opponent!=null) {
+								  						str = abbreviate(teamN) + " v " + d.opponent + "<br>";
+								  						str += "match no: " + d.matchNumber + "<br>";
+									  					if(d.winner[0]==true) {
+									  						str += abbreviate(teamN) + " won by ";
+									  					} else {
+									  						str += abbreviate(d.opponent) + " won by ";
+									  					}
+									  					str += d.winner[1][0];
+									  					if((d.winner[1][1]=="run") || (d.winner[1][1]=="runs")) {
+									  						str += " run(s)";
+									  					} else if((d.winner[1][1]=="wicket") || (d.winner[1][1]=="wickets")) {
+									  						str += " wicket(s)";
+									  					}
+								  					}
+								  					return str;
+												})
 								  				.style("opacity", .9)
 									  			.style("left", d3.event.pageX - (sizeOfRects*1.41) + "px")
 	                   							.style("top", d3.event.pageY + 5 + "px");
@@ -251,6 +240,7 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 											  			.attr("stroke", "white")
 											  			.attr("stroke-width", 2);
 								  		});
+				
 		var homeIcons = calendarHeatMap.selectAll("image")
 	  								.data(generatedData)
 	  								.enter()
@@ -273,10 +263,6 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 					                .attr("width", "16")
 					                .attr("height", "16");
 
-
-
-
-	
 	});
 	
 

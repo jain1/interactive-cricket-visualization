@@ -6,13 +6,7 @@ body {
   height: 100%;
   vertical-align: middle;
   text-align: center;
-  color: rgb(30, 184, 72);
-  /*
-  color: white;
-  background: url('img/stadium2.jpg');
-  background-size: cover;
-  background-repeat: no-repeat;
-  */
+  color: #1EB848;
 }
 
 .wrapper {
@@ -29,7 +23,6 @@ nav {
   padding: 0;
   overflow: hidden;
   background: linear-gradient(#f6f6f6, #e0e0e0);
-  /*background: #4C9689;*/
 
 }
 
@@ -53,7 +46,6 @@ nav li button {
   background-size: cover;
   background-repeat: no-repeat;
   background-position: 50%;
-
   background-color: #e0e0e0;
   border: 1px solid rgb(169,169,169);
   border-radius: 6px;
@@ -122,22 +114,6 @@ nav select {
     cursor:pointer;
 }
 
-
-.treemap-container {
-  /*display: inline-block;*/
-}
-/*
-.node {
-  
-  font: 10px sans-serif;
-  line-height: 12px;
-  overflow: hidden;
-  position: absolute;
-  text-indent: 2px;
-  cursor: pointer;
-}
-*/
-
 .tooltip {
   background: #202020;
   color: #fff;
@@ -158,58 +134,6 @@ nav select {
   display: inline-block;
   text-align: left;
 }
-
-/*
-#slider {
-  display: inline-block; 
-  margin: 0;
-  width: 60%;
-}
-
-input[type=range]{
-    -webkit-appearance: none;
-    background: inherit;
-    cursor: ew-resize;
-}
-
-input[type=range]::-webkit-slider-runnable-track {
-    width: 300px;
-    height: 7px;
-    background: #e6e6e6;
-    background: linear-gradient(to right, #e6e6e6 88.1%, black 88.3%, #e6e6e6 88.5%, #e6e6e6);
-    border: none;
-    border-radius: 30px;
-}
-
-input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    border: none;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    
-
-    background: radial-gradient(rgba(255,255,255,0.2), #ededed, rgba(255,255,255,0.2));
-    
-
-    background: linear-gradient(45deg, #ededed, #fff, #fff, #fff, #fff, #fff, #fff, #fff, #fff, #fff, #fff, #fff, #ccc, #fff, #fff, #ccc, #fff, #fff, #ccc, #fff, #fff, #fff, #fff, #fff, #fff, #fff, #fff, #fff, #fff, #ededed);
-
-    background: linear-gradient(45deg, #ededed, #f72718, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #ccc, #B21206, #B21206, #ccc, #B21206, #B21206, #ccc, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #B21206, #f72718, #ededed);
-
-
-    margin-top: -4px;
-}
-
-input[type=range]:focus {
-    outline: none;
-}
-
-input[type=range]:focus::-webkit-slider-runnable-track {
-    background: #ffd573;
-    background: #1EB848;
-    background: linear-gradient(to right, #1EB848 88.1%, black 88.3%, #1EB848 88.5%, #1EB848);
-}
-*/
 
 .node {
     border: solid 1px inherit;
@@ -431,12 +355,6 @@ input[type=range]::-ms-tooltip {
   color: black;
   cursor: pointer;
 }
-/*
-.form-square:hover {
-  stroke-width: 2;
-  stroke: black;
-}
-*/
 
 #breadcrumb {
   display: inline-block;
@@ -452,8 +370,4 @@ input[type=range]::-ms-tooltip {
 #triangle {
   stroke: #616161;
   stroke-width: 1;
-}
-
-.calendar-heat-map {
-  /*border-bottom: 1px solid #616161;*/
 }

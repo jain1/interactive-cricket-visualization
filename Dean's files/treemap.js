@@ -139,7 +139,11 @@ function treemap(seasonNum) {
             })
           .on("mouseover", function(d) {
               tooltip.style("opacity", .9);
-              tooltip.html("<span style='font-size: 110%;'>" + d["name"] + "</span><br>" + "League-stage points: " + ((sliderPosition > 14) ? (d.progressionArray[sliderPosition-sliderPosition+13]) : (d.progressionArray[sliderPosition-1])))
+              tooltip.html(function() { 
+                if (d.progressionArray!=null) {
+                  return ("<span style='font-size: 110%;'>" + d["name"] + "</span><br>" + "League-stage points: " + ((sliderPosition > 14) ? (d.progressionArray[13]) : (d.progressionArray[sliderPosition-1]))); 
+                }
+              })
                    .style("left", d3.event.pageX + 5 + "px")
                    .style("top", d3.event.pageY + 5 + "px");
           
@@ -168,8 +172,6 @@ function treemap(seasonNum) {
     document.getElementById('slider').max = sliderPosition;
 
     d3.select("#slider").on("input", function() {
-      //updateSliderLabel(+this.value);
-      //setValue(16);
       sliderPosition = +this.value;
       var value = function(d) { return d.progressionArray[sliderPosition-1] + 2; };
 
@@ -212,63 +214,9 @@ function calcLeagueStageMatchesPerTeam(n) { // n passed in is always even
   }
 }
 
-function pickColor(str) {
-  if(str != null) {
-    if (str == 'Chennai Super Kings') {
-      return "yellow";
-    } else if (str == 'Deccan Chargers') {
-      return "silver";
-    } else if (str == 'Delhi Daredevils') {
-      return "navy";
-    } else if (str == 'Kings XI Punjab') {
-      return "red";
-    } else if (str == 'Kolkata Knight Riders') {
-      return "purple";
-    } else if (str == 'Mumbai Indians') {
-      return "blue";
-    } else if (str == 'Rajasthan Royals') {
-      return "RoyalBlue";
-    } else if (str == 'Royal Challengers Bangalore') {
-      return "gold";
-    } else if (str == 'Sunrisers Hyderabad') {
-      return "orange";
-    } else if (str == 'Rising Pune Supergiants') {
-      return "pink";
-    } else if (str == 'Gujarat Lions') {
-      return "orange";
-    } else if (str == 'Pune Warriors India') {
-      return "LightSkyBlue";
-    }
-  }
-  return "inherit";
-}
-/*
-function updateSliderLabel(slider) {
-  // adjust the text on the range slider
-  sliderPosition = +slider;
-  if (slider==16) {
-    d3.select("#slider-value").text("Final");
-    d3.select("#slider").property("value", slider);
-  } else if (slider==15) {
-    d3.select("#slider-value").text("Semi-finals");
-    d3.select("#slider").property("value", slider);
-  } else {
-    d3.select("#slider-value").text("Match " + slider);
-    d3.select("#slider").property("value", slider);
-  }
-  var rangeLength = slider/16;
-  rangeLength = rangeLength*100;
-  console.log(rangeLength);
-  var sliderObj = document.querySelector("#slider");
-  sliderObj.style.background = "white";
-}
-
-*/
-
-
 
 /* Code by Steven Estrella. http://www.shearspiremedia.com */
-/* we need to change slider appearance oninput and onchange */
+/* modified by: Dean Hassan */
 window.onload = function() {
   setValue(16);
 }
@@ -293,7 +241,6 @@ function showValue(val) {
   var loc = pc * tracksize;
   if(val == slider.max) {
     rangevalue.innerHTML = "Final";
-    console.log("final");
   } else if(val == slider.max - 1) {
     rangevalue.innerHTML = "Semi-finals";
   } else {
