@@ -66,7 +66,7 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 		calendarHeatMap.append("svg:image")
 					    .attr("xlink:href", teamLogoSrc)
 					    .attr("x", "-50")
-		                .attr("y", "-60")
+		                .attr("y", "-50")
 		                .attr("width", "100")
 		                .attr("height", "100");
 
@@ -119,20 +119,25 @@ function launchCalendarHeatMap(seasonNum, teamN) {
 		//defining color scales: ----------
 		var winByRunsScale = d3.scale.quantize()
 						.domain([generatedData.maxRunMargin, 0])
-						.range(["#13762e", "#178c37", "#1aa23f", "#1eb848", "#22ce51", "#42e06d"]);
+						//.range(["#13762e", "#178c37", "#1aa23f", "#1eb848", "#22ce51", "#42e06d"]);
+						.range(["#1B5E20", "#2E7D32", "#388E3C", "#43A047", "#4CAF50", "#66BB6A", "#81C784", "#A5D6A7",]);
+						//.range(["#01579B", "#0277BD", "#0288D1", "#039BE5", "#03A9F4", "#29B6F6", "#4FC3F7", "#81D4FA",]);
 						
 		var winByWicketsScale = d3.scale.quantize()
 						.domain([generatedData.maxWicketMargin, 0])
-						.range(["#13762e", "#178c37", "#1aa23f", "#1eb848", "#22ce51", "#42e06d"]);
-						
+						//.range(["#13762e", "#178c37", "#1aa23f", "#1eb848", "#22ce51", "#42e06d"]);
+						.range(["#1B5E20", "#2E7D32", "#388E3C", "#43A047", "#4CAF50", "#66BB6A", "#81C784", "#A5D6A7",]);
+						//.range(["#01579B", "#0277BD", "#0288D1", "#039BE5", "#03A9F4", "#29B6F6", "#4FC3F7", "#81D4FA",]);
 
 		var lossByRunsScale = d3.scale.quantize()
 						.domain([generatedData.maxRunMargin, 0])
-						.range(["#b30000", "#cc0000", "#e60000", "#ff0000", "#ff3333", "#ff4d4d"]);
+						//.range(["#b30000", "#cc0000", "#e60000", "#ff0000", "#ff3333", "#ff4d4d"]);
+						.range(["#B71C1C", "#C62828", "#D32F2F", "#E53935", "#F44336", "#EF5350", "#EF9A9A", "#FFCDD2",]);
 
 		var lossByWicketsScale = d3.scale.quantize()
 						.domain([generatedData.maxWicketMargin, 0])
-						.range(["#b30000", "#cc0000", "#e60000", "#ff0000", "#ff3333", "#ff4d4d"]);
+						//.range(["#b30000", "#cc0000", "#e60000", "#ff0000", "#ff3333", "#ff4d4d"]);
+						.range(["#B71C1C", "#C62828", "#D32F2F", "#E53935", "#F44336", "#EF5350", "#EF9A9A", "#FFCDD2",]);
 		// ----------------------------------
 
 

@@ -62,7 +62,6 @@ function abbreviate(str) {
     if((character==character.toUpperCase()) && (character!=" ")) {
       res += character;
     }
-    
   }
   return res;
 }

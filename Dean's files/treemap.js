@@ -182,6 +182,8 @@ function treemap(seasonNum) {
 
     });
 
+    document.getElementById("dropdown-list").style.zIndex = 50;
+
   });
    
 }  
