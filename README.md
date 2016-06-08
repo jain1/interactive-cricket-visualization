@@ -1,0 +1,2 @@
+# Interactive Cricket Visualization
+This repository includes a project that looks at analyzing the impact of in-game events on the final outcome of the game. Most statistics show an overview of the game, but not of significant in-game events. This interface will also create a visual representation to parse through all the data about 1 or more cricket matches, enabling non-technical users to gain insight quickly as well!
