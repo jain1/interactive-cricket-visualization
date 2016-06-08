@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+
+  <head>
+    <title>Cricket Visualization</title>  
+    <link href='https://fonts.googleapis.com/css?family=Exo+2' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="//d3js.org/d3.v3.min.js"></script>
+    <script src="main.js"></script>
+    <script src="treemap.js"></script>
+    <script src="calendarHeatMap.js"></script>
+  </head>
+  <body>
+    
+    <nav>
+      <div class="wrapper">
+        <li class="dropdown">
+          <button class="dropbtn" onclick="dropdown()"></button>
+          <div class="dropdown-content" id="dropdown-list">
+            <div style="z-index: 100;">
+            <a id="refresh-button">Restart/Refresh</a>
+            <a href="#">About</a>
+            </div>
+          </div>
+        </li>
+        <li><a>Cricket Visualization</a></li>
+        <li id="team-logo"></li>
+        <li id="breadcrumb"><label class='nav-contents'>Competition:</label>
+          <select id="seasonSelect" onchange="treemap(this.options[this.selectedIndex].value)" class='nav-contents'>
+              <option disabled selected value> -- select an option -- </option>
+              <option value="1">IPL Season 2008</option>
+              <option value="2" disabled selected value>IPL Season 2009</option>
+              <option value="3" disabled selected value>IPL Season 2010</option>
+              <option value="4" disabled selected value>IPL Season 2011</option>
+              <option value="5" disabled selected value>IPL Season 2012</option>
+              <option value="6" disabled selected value>IPL Season 2013</option>
+              <option value="7" disabled selected value>IPL Season 2014</option>
+              <option value="8" disabled selected value>IPL Season 2015</option>
+            </select>
+          </li>
+        </div>
+    </nav>
+    <div class="treemap">
+      <div class="treemap-container"></div>
+      <div id="slider-container">
+        <p>Drag the slider to see the performance of teams throughout the season:</p>
+        <div class="slidershell" id="slidershell">
+          <div class="sliderfill" id="sliderfill"></div>
+          <div class="slidertrack" id="slidertrack"></div>
+          <div class="sliderthumb" id="sliderthumb"></div>
+          <div class="slidervalue" id="slidervalue"></div>
+          <input class="slider" id="slider" type="range" min="1" max="16" value="16" oninput="showValue(value);"/>
+        </div>
+
+      </div>
+
+    </div>
+    <div class="calendar-heat-map">
+    </div>
+    <div class="chord-diagram">
+    </div>
+    
+  </body>
+
+</html>
